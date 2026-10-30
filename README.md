@@ -53,8 +53,8 @@ Built with **Laravel 13, PHP 8.3, MySQL and Bootstrap 5** as the Information Sys
 ### Install
 
 ```bash
-git clone https://github.com/<your-username>/SlayNa_Sneaker_Store.git
-cd SlayNa_Sneaker_Store
+git clone https://github.com/SaiThurainKhant007/SlayNA_Sneaker_Store.git
+cd SlayNA_Sneaker_Store
 composer install
 cp .env.example .env
 php artisan key:generate

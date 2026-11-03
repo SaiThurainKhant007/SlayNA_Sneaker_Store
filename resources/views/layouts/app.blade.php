@@ -244,5 +244,6 @@
     });
 })();
 </script>
+<script src="{{ asset('js/falling-stars.js') }}" defer></script>
 </body>
 </html>

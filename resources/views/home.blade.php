@@ -24,16 +24,18 @@
                 @endif
             </div>
             <div class="col-lg-7 sl-hero-media">
-                {{-- Motion showcase: shoes take turns on stage, each change uses the next of 5 transitions
-                     (slide, zoom, flip, spin, drop). Add or remove <img> tags freely; the script adapts. --}}
+                {{-- 3D carousel (After Effects style): the shoes sit on a turning ring. The front one is big, sharp and
+                     glowing; the rest wait behind it, smaller, angled away and fading into the dark. The ring holds
+                     on each shoe, then swings to the next with an eased overshoot. Drag to turn it.
+                     Add or remove <img> tags freely; the script adapts. --}}
                 <div class="sl-hero-stage" role="img" aria-label="Featured sneakers: Air Jordan 7, Nike Air Yeezy, Louis Vuitton x Nike Air Force 1 and Air Jordan 4">
                     <span class="sl-hero-glow" aria-hidden="true"></span>
+                    <span class="sl-hero-floor" aria-hidden="true"></span>
                     {{-- img/hero/: each shoe trimmed, scaled to the same visual size and set on the same floor line --}}
                     <img src="{{ asset('img/hero/shoe-1.webp') }}" class="sl-hero-shoe" alt="" width="1200" height="675">
                     <img src="{{ asset('img/hero/shoe-2.webp') }}" class="sl-hero-shoe" alt="" width="1200" height="675">
                     <img src="{{ asset('img/hero/shoe-3.webp') }}" class="sl-hero-shoe" alt="" width="1200" height="675">
                     <img src="{{ asset('img/hero/shoe-4.webp') }}" class="sl-hero-shoe" alt="" width="1200" height="675">
-                    <span class="sl-hero-floor" aria-hidden="true"></span>
                     <div class="sl-hero-dots"></div>
                 </div>
                 <script>
@@ -41,39 +43,112 @@
                     const stage = document.currentScript.previousElementSibling;
                     const shoes = [...stage.querySelectorAll('.sl-hero-shoe')];
                     const dotsBox = stage.querySelector('.sl-hero-dots');
-                    const effects = ['slide', 'zoom', 'flip', 'spin', 'drop'];
                     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-                    let current = 0, step = 0, timer;
+                    const N = shoes.length, STEP = 360 / N;
+                    const HOLD = 2600, MOVE = 1150;   // ms resting on a shoe / ms swinging to the next
+
+                    let W = stage.offsetWidth, angle = 0, tween = null, drag = null, holdUntil = 0, visible = true;
+                    let front = -1;
+                    const filters = [];
 
                     const dots = shoes.map((_, i) => {
                         const b = document.createElement('button');
                         b.type = 'button';
                         b.setAttribute('aria-label', `Show sneaker ${i + 1}`);
-                        b.addEventListener('click', () => { show(i); restart(); });
+                        b.addEventListener('click', () => {
+                            // Shortest way round to shoe i.
+                            let d = ((i * STEP - angle) % 360 + 540) % 360 - 180;
+                            goTo(angle + d);
+                        });
                         dotsBox.appendChild(b);
                         return b;
                     });
 
-                    function show(next) {
-                        if (next === current) return;
-                        const fx = still ? 'none' : effects[step++ % effects.length];
-                        const out = shoes[current], inc = shoes[next];
-                        shoes.forEach(s => s.classList.remove('is-leaving'));
-                        out.classList.remove('is-active');
-                        out.dataset.fx = inc.dataset.fx = fx;
-                        out.classList.add('is-leaving');
-                        void inc.offsetWidth;                 // restart the entry animation
-                        inc.classList.add('is-active');
-                        current = next;
-                        dots.forEach((d, i) => d.classList.toggle('is-active', i === next));
-                    }
-                    function restart() {
-                        clearInterval(timer);
-                        if (!still && shoes.length > 1) timer = setInterval(() => show((current + 1) % shoes.length), 3500);
+                    // Ease in, swing a little past, settle back: the classic motion-graphics move.
+                    const easeInOutBack = p => {
+                        const c = 1.2 * 1.525;
+                        return p < 0.5
+                            ? (Math.pow(2 * p, 2) * ((c + 1) * 2 * p - c)) / 2
+                            : (Math.pow(2 * p - 2, 2) * ((c + 1) * (p * 2 - 2) + c) + 2) / 2;
+                    };
+                    function goTo(target, now = performance.now()) {
+                        if (still) { angle = target; tween = null; render(now); return; }
+                        tween = { from: angle, to: target, start: now };
                     }
 
-                    dots[0].classList.add('is-active');
-                    restart();
+                    function render(now) {
+                        const r = STEP > 0 ? Math.round(angle / STEP) : 0;
+                        const f = ((r % N) + N) % N;
+                        if (f !== front) {
+                            front = f;
+                            dots.forEach((d, i) => d.classList.toggle('is-active', i === f));
+                        }
+                        const bob = still ? 0 : Math.sin(now / 560) * W * 0.012;           // gentle float
+                        shoes.forEach((img, i) => {
+                            const t = (i * STEP - angle) * Math.PI / 180;
+                            const depth = (1 - Math.cos(t)) / 2;                           // 0 front .. 1 back
+                            const x = Math.sin(t) * W * 0.4;
+                            const z = -depth * W * 1.1;
+                            const turn = Math.sin(t) * 38;                                 // side shoes angle away
+                            img.style.transform =
+                                `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, ${(bob * (1 - depth) - depth * W * 0.04).toFixed(1)}px, ${z.toFixed(1)}px) rotateY(${turn.toFixed(1)}deg) rotate(-6deg)`;
+                            img.style.zIndex = String(100 - Math.round(depth * 50));
+                            // Depth without blur: shoes further back stay sharp but sink into the dark (darker, less colour,
+                            // fainter); the one straight behind fades out so it never ghosts through the front shoe.
+                            const glow = Math.max(0, 1 - depth * 2.2) * 0.55;
+                            const filter = `brightness(${(1 - depth * 0.6).toFixed(2)}) saturate(${(1 - depth * 0.5).toFixed(2)}) drop-shadow(0 25px 30px rgba(250,49,49,${glow.toFixed(2)}))`;
+                            if (filters[i] !== filter) { img.style.filter = filters[i] = filter; }   // filters are costly: only on change
+                            img.style.opacity = (1 - Math.pow(depth, 3)).toFixed(2);
+                        });
+                    }
+
+                    function frame(now) {
+                        if (visible) {
+                            if (tween) {
+                                const p = Math.min(1, (now - tween.start) / MOVE);
+                                angle = tween.from + (tween.to - tween.from) * easeInOutBack(p);
+                                if (p === 1) { angle = tween.to; tween = null; holdUntil = now + HOLD; }
+                            } else if (!drag && N > 1 && now >= holdUntil) {
+                                goTo(Math.round(angle / STEP) * STEP + STEP, now);
+                            }
+                            render(now);
+                        }
+                        requestAnimationFrame(frame);
+                    }
+
+                    window.addEventListener('resize', () => { W = stage.offsetWidth; render(performance.now()); });
+                    holdUntil = performance.now() + HOLD;
+                    render(performance.now());
+                    if (still || N < 2) return;
+                    requestAnimationFrame(frame);
+
+                    // Drag to turn the ring; on release it settles on the nearest shoe.
+                    stage.addEventListener('pointerdown', e => {
+                        if (e.target.closest('button')) return;
+                        drag = { x: e.clientX, v: 0 };
+                        tween = null;
+                        stage.setPointerCapture(e.pointerId);
+                        stage.classList.add('is-dragging');
+                    });
+                    stage.addEventListener('pointermove', e => {
+                        if (!drag) return;
+                        const d = -(e.clientX - drag.x) / W * 160;
+                        angle += d;
+                        drag.v = d;
+                        drag.x = e.clientX;
+                    });
+                    const release = () => {
+                        if (!drag) return;
+                        const target = Math.round((angle + drag.v * 6) / STEP) * STEP;   // a flick carries on a bit
+                        drag = null;
+                        stage.classList.remove('is-dragging');
+                        goTo(target);
+                    };
+                    stage.addEventListener('pointerup', release);
+                    stage.addEventListener('pointercancel', release);
+
+                    // Don't animate while the hero is scrolled out of view.
+                    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(stage);
                 })();
                 </script>
             </div>

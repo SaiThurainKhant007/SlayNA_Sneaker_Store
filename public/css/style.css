@@ -25,20 +25,6 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
-/* =====================================================================
-   SlayNa theme
-   Written mobile-first: base rules target phones, then media queries
-   add to them as the screen grows.
-
-   Breakpoints (match Bootstrap 5):
-     < 360px   small phones / foldable cover screens (Galaxy Z Fold)
-     >= 576px  large phones (sm)
-     >= 768px  tablets portrait, unfolded foldables (md)
-     >= 992px  tablets landscape, small laptops (lg)  -> full menu bar
-     >= 1200px desktops (xl)
-     >= 1920px large monitors, TVs, smart displays
-     >= 2560px 4K / very large displays
-   ===================================================================== */
 :root {
     --sl-red: #e3171f;
     --sl-red-dark: #b80f16;
@@ -51,6 +37,18 @@ body {
 html { -webkit-text-size-adjust: 100%; }
 body { font-family: var(--sl-body); overflow-x: hidden; }
 img { max-width: 100%; }
+
+/* Falling stars (js/falling-stars.js): fixed behind all page content, never catches clicks.
+   Full-width dark bands (hero, page headers, footer) paint their background on a ::before at
+   z-index -2, one layer below the stars, so the stars fall through them instead of stopping at their edges. */
+.sl-stars {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: -1; pointer-events: none;
+}
+.sl-hero::before, .sl-page-head::before, .sl-footer::before {
+    content: ""; position: absolute; inset: 0; z-index: -2;
+    background: var(--sl-band);
+}
 
 /* ---------- Header (phones first) ---------- */
 .sl-nav {
@@ -116,7 +114,8 @@ img { max-width: 100%; }
 
 /* ---------- Hero (phones first) ---------- */
 .sl-hero {
-    background: radial-gradient(circle at 75% 50%, #2a1214 0%, var(--sl-dark) 60%);
+    --sl-band: radial-gradient(circle at 75% 50%, #2a1214 0%, var(--sl-dark) 60%);
+    position: relative;
     color: #fff;
     padding: 2.5rem 0 3rem;
     overflow: hidden;            /* rotated image must not cause sideways scroll */
@@ -181,20 +180,20 @@ img { max-width: 100%; }
     filter: drop-shadow(0 25px 30px rgba(250, 49, 49, 0.55));
 }
 
-/* Motion showcase: one shoe on stage at a time; every change uses the next of
-   5 transitions (slide, zoom, flip, spin, drop) â€” the script in home.blade.php sets data-fx */
+/* 3D carousel (After Effects style): the shoes sit on a turning ring; the script in home.blade.php places
+   each one every frame (position, depth, angle, blur, glow). Drag to turn it. */
 .sl-hero-stage {
-    --sl-pose: translate(-50%, -50%) rotate(-6deg);
-    --sl-shadow: blur(0) drop-shadow(0 25px 30px rgba(250,49,49,.55));
-    --sl-in: .9s cubic-bezier(.22,.8,.3,1) both;
-    --sl-out: .7s cubic-bezier(.6,0,.8,.4) both;
     position: relative;
     width: 100%;
     max-width: 620px;
     margin: 0 auto;
     aspect-ratio: 16 / 10;
-    perspective: 1200px;            /* depth for the flip */
+    perspective: 1100px;
+    cursor: grab;
+    touch-action: pan-y;            /* horizontal drag turns the ring, vertical still scrolls the page */
+    user-select: none;
 }
+.sl-hero-stage.is-dragging { cursor: grabbing; }
 .sl-hero-glow {
     position: absolute; inset: 12% 18%;
     border-radius: 50%;
@@ -205,64 +204,19 @@ img { max-width: 100%; }
     position: absolute; left: 20%; right: 20%; bottom: 10%; height: 6%;
     border-radius: 50%;
     background: radial-gradient(ellipse, rgba(0,0,0,.65) 0%, rgba(0,0,0,0) 70%);
-    animation: sl-floor 3.5s ease-in-out infinite;
 }
 .sl-hero-shoe {
     position: absolute; top: 50%; left: 50%;
-    width: 92%;
+    width: 66%;
     height: auto;                   /* images are all 16:9 with the shoe at the same size and floor line */
-    opacity: 0;
-    transform: var(--sl-pose);
-    filter: var(--sl-shadow);
+    transform: translate(-50%, -50%) rotate(-6deg);
     pointer-events: none;
-    will-change: transform, opacity, filter;
+    will-change: transform, filter, opacity;
 }
-/* On stage: entry effect, then a gentle float (listed last so it takes over) */
-.sl-hero-shoe.is-active { opacity: 1; animation: sl-float 3.5s ease-in-out .9s infinite; }
-.sl-hero-shoe.is-active[data-fx="slide"] { animation: sl-in-slide var(--sl-in), sl-float 3.5s ease-in-out .9s infinite; }
-.sl-hero-shoe.is-active[data-fx="zoom"]  { animation: sl-in-zoom  var(--sl-in), sl-float 3.5s ease-in-out .9s infinite; }
-.sl-hero-shoe.is-active[data-fx="flip"]  { animation: sl-in-flip  var(--sl-in), sl-float 3.5s ease-in-out .9s infinite; }
-.sl-hero-shoe.is-active[data-fx="spin"]  { animation: sl-in-spin  var(--sl-in), sl-float 3.5s ease-in-out .9s infinite; }
-.sl-hero-shoe.is-active[data-fx="drop"]  { animation: sl-in-drop  1s cubic-bezier(.3,1.4,.5,1) both, sl-float 3.5s ease-in-out 1s infinite; }
-/* Leaving */
-.sl-hero-shoe.is-leaving[data-fx="slide"] { animation: sl-out-slide var(--sl-out); }
-.sl-hero-shoe.is-leaving[data-fx="zoom"]  { animation: sl-out-zoom  var(--sl-out); }
-.sl-hero-shoe.is-leaving[data-fx="flip"]  { animation: sl-out-flip  var(--sl-out); }
-.sl-hero-shoe.is-leaving[data-fx="spin"]  { animation: sl-out-spin  var(--sl-out); }
-.sl-hero-shoe.is-leaving[data-fx="drop"]  { animation: sl-out-drop  var(--sl-out); }
 
-/* 1. Slide: in from the right, out to the left, blurred by speed */
-@keyframes sl-in-slide  { from { opacity: 0; transform: translate(15%, -50%) rotate(10deg) scale(.92); filter: blur(8px) drop-shadow(0 25px 30px rgba(250,49,49,0)); } }
-@keyframes sl-out-slide { from { opacity: 1; transform: var(--sl-pose); filter: var(--sl-shadow); }
-                          to   { opacity: 0; transform: translate(-120%, -48%) rotate(-16deg) scale(.92); filter: blur(8px) drop-shadow(0 25px 30px rgba(250,49,49,0)); } }
-/* 2. Zoom: grows out of the glow, old one blows up past the camera */
-@keyframes sl-in-zoom   { from { opacity: 0; transform: translate(-50%, -50%) rotate(-6deg) scale(.7); filter: blur(10px) drop-shadow(0 25px 30px rgba(250,49,49,0)); } }
-@keyframes sl-out-zoom  { from { opacity: 1; transform: var(--sl-pose); filter: var(--sl-shadow); }
-                          to   { opacity: 0; transform: translate(-50%, -50%) rotate(-6deg) scale(1.2); filter: blur(12px) drop-shadow(0 25px 30px rgba(250,49,49,0)); } }
-/* 3. Flip: turns on its vertical axis like a card */
-@keyframes sl-in-flip   { from { opacity: 0; transform: translate(-50%, -50%) rotateY(-90deg) rotate(-6deg); } }
-@keyframes sl-out-flip  { from { opacity: 1; transform: var(--sl-pose); filter: var(--sl-shadow); }
-                          to   { opacity: 0; transform: translate(-50%, -50%) rotateY(90deg) rotate(-6deg); } }
-/* 4. Spin: twirls in from small, twirls away */
-@keyframes sl-in-spin   { from { opacity: 0; transform: translate(-50%, -50%) rotate(-200deg) scale(.7); } }
-@keyframes sl-out-spin  { from { opacity: 1; transform: var(--sl-pose); filter: var(--sl-shadow); }
-                          to   { opacity: 0; transform: translate(-50%, -50%) rotate(180deg) scale(.7); } }
-/* 5. Drop: falls from above and bounces, old one sinks through the floor */
-@keyframes sl-in-drop   { from { opacity: 0; transform: translate(-50%, -160%) rotate(-14deg); } 40% { opacity: 1; } }
-@keyframes sl-out-drop  { from { opacity: 1; transform: var(--sl-pose); filter: var(--sl-shadow); }
-                          to   { opacity: 0; transform: translate(-50%, 60%) rotate(4deg) scale(.95); filter: blur(4px) drop-shadow(0 25px 30px rgba(250,49,49,0)); } }
-
-@keyframes sl-float {
-    0%, 100% { transform: var(--sl-pose); }
-    50%      { transform: translate(-50%, -54%) rotate(-7deg); }   /* float only, no size change */
-}
 @keyframes sl-glow {
     0%, 100% { transform: scale(.9);  opacity: .7; }
     50%      { transform: scale(1.08); opacity: 1; }
-}
-@keyframes sl-floor {
-    0%, 100% { transform: scaleX(1);  opacity: .9; }
-    50%      { transform: scaleX(.8); opacity: .6; }
 }
 
 .sl-hero-dots {
@@ -277,10 +231,9 @@ img { max-width: 100%; }
 .sl-hero-dots button.is-active { width: 24px; background: var(--sl-red); }
 .sl-hero-dots button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
-/* No motion wanted: no autoplay, the dots switch shoes instantly */
+/* No motion wanted: the ring doesn't turn on its own, the dots switch shoes instantly */
 @media (prefers-reduced-motion: reduce) {
-    .sl-hero-shoe, .sl-hero-glow, .sl-hero-floor { animation: none !important; }
-    .sl-hero-shoe.is-leaving { opacity: 0; }
+    .sl-hero-glow { animation: none !important; }
 }
 
 /* ---------- Product section ---------- */
@@ -348,7 +301,8 @@ img { max-width: 100%; }
 
 /* ---------- Inner pages (Brands / About / Contact) ---------- */
 .sl-page-head {
-    background: radial-gradient(circle at 80% 30%, #2a1214 0%, var(--sl-dark) 65%);
+    --sl-band: radial-gradient(circle at 80% 30%, #2a1214 0%, var(--sl-dark) 65%);
+    position: relative;
     color: #fff;
     padding: 2.5rem 0;
     text-align: center;
@@ -841,7 +795,8 @@ img { max-width: 100%; }
 
 /* ---------- Site footer ---------- */
 .sl-footer {
-    background: var(--sl-dark);
+    --sl-band: var(--sl-dark);
+    position: relative;
     color: #b5b5b8;
     border-top: 3px solid var(--sl-red);
     padding-top: 2.5rem;
@@ -1349,6 +1304,10 @@ a.sl-list-name:hover { color: var(--sl-admin-accent-text); }
     --bs-tertiary-bg: var(--sl-d-surface-2);
     background-color: var(--sl-d-bg);
     color: var(--sl-d-ink);
+}
+[data-bs-theme="dark"] .sl-hero::before, [data-bs-theme="dark"] .sl-page-head::before {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
+            mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent);
 }
 [data-bs-theme="dark"] body:not(.sl-admin) .text-muted { color: var(--sl-d-muted) !important; }
 

@@ -15,6 +15,10 @@ diagram updated.
 
 GitHub and VS Code (with a Mermaid extension) render this diagram directly.
 
+The same diagram as a StarUML project is [SlayNa_Class_Diagram.mdj](SlayNa_Class_Diagram.mdj).
+After changing a class, update `docs/make_staruml_diagram.py` and run
+`python docs/make_staruml_diagram.py docs/SlayNa_Class_Diagram.mdj`.
+
 | Class | Table |
 |---|---|
 | Admin | `admins` |

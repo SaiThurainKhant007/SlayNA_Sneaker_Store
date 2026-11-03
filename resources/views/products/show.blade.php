@@ -45,7 +45,7 @@
                 <div class="row g-2 align-items-end">
                     <div class="col-auto">
                         <label class="form-label small">Size</label>
-                        <select name="variant_id" class="form-select" required>
+                        <select name="product_size_id" class="form-select" required>
                             @foreach ($product->variants as $variant)
                                 <option value="{{ $variant->id }}" @disabled($variant->stock_quantity <= 0)>
                                     EU {{ $variant->size->label }} &mdash; {{ $variant->stock_quantity > 0 ? $variant->stock_quantity.' in stock' : 'Out of stock' }}

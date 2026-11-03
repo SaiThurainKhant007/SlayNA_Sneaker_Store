@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\User;
+use App\Models\ProductSize;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -29,8 +29,8 @@ class DashboardController extends Controller
                 'delta' => $this->change(Order::whereBetween('order_date', $thisMonth)->count(), Order::whereBetween('order_date', $lastMonth)->count()),
             ],
             'customers' => [
-                'total' => User::where('role', 'customer')->count(),
-                'delta' => $this->change(User::where('role', 'customer')->whereBetween('created_at', $thisMonth)->count(), User::where('role', 'customer')->whereBetween('created_at', $lastMonth)->count()),
+                'total' => Customer::count(),
+                'delta' => $this->change(Customer::whereBetween('created_at', $thisMonth)->count(), Customer::whereBetween('created_at', $lastMonth)->count()),
             ],
             'products' => [
                 'total' => Product::where('status', 'active')->count(),
@@ -50,12 +50,12 @@ class DashboardController extends Controller
         ];
 
         // Low stock, grouped per product: which sizes are low and the smallest stock left
-        $lowStock = ProductVariant::with(['product', 'size'])
-            ->join('products', 'products.id', '=', 'product_variants.product_id')
+        $lowStock = ProductSize::with(['product', 'size'])
+            ->join('products', 'products.id', '=', 'product_sizes.product_id')
             ->where('products.status', 'active')
-            ->whereColumn('product_variants.stock_quantity', '<=', 'products.low_stock_threshold')
-            ->orderBy('product_variants.stock_quantity')
-            ->get(['product_variants.*'])
+            ->whereColumn('product_sizes.stock_quantity', '<=', 'products.low_stock_threshold')
+            ->orderBy('product_sizes.stock_quantity')
+            ->get(['product_sizes.*'])
             ->groupBy('product_id')
             ->map(fn ($variants) => [
                 'product' => $variants->first()->product,
@@ -70,12 +70,12 @@ class DashboardController extends Controller
 
         // Best sellers this month: totals per product in a subquery (strict GROUP BY on MariaDB), then joined to Product models
         $soldThisMonth = DB::table('order_items')
-            ->join('product_variants', 'product_variants.id', '=', 'order_items.variant_id')
+            ->join('product_sizes', 'product_sizes.id', '=', 'order_items.product_size_id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->where('orders.order_status', '!=', 'cancelled')
             ->whereBetween('orders.order_date', $thisMonth)
-            ->groupBy('product_variants.product_id')
-            ->select('product_variants.product_id', DB::raw('SUM(order_items.quantity) as units'), DB::raw('SUM(order_items.quantity * order_items.unit_price) as revenue'));
+            ->groupBy('product_sizes.product_id')
+            ->select('product_sizes.product_id', DB::raw('SUM(order_items.quantity) as units'), DB::raw('SUM(order_items.quantity * order_items.unit_price) as revenue'));
 
         $topProducts = Product::query()
             ->joinSub($soldThisMonth, 'sold', 'sold.product_id', '=', 'products.id')

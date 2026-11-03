@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use App\Models\Size;
 use Illuminate\Database\Seeder;
 
@@ -109,7 +109,7 @@ class CatalogSeeder extends Seeder
                 }
 
                 foreach ($sizes as $size) {
-                    ProductVariant::create([
+                    ProductSize::create([
                         'product_id' => $product->id,
                         'size_id' => $size->id,
                         'stock_quantity' => random_int(0, 15),

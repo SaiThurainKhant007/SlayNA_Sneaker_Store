@@ -2,16 +2,19 @@
 
 namespace Database\Seeders;
 
+use App\Models\Admin;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\PaymentMethod;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use App\Models\Review;
 use App\Models\Size;
-use App\Models\User;
+use App\Models\Staff;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -27,31 +30,25 @@ class DatabaseSeeder extends Seeder
     {
         $password = Hash::make('Password123!');
 
-        $admin = User::create([
+        $admin = Admin::create([
             'name' => 'System Admin',
             'email' => 'admin@slayna.com',
             'password' => $password,
-            'role' => 'admin',
         ]);
 
-        $staff = User::create([
+        $staff = Staff::create([
             'name' => 'Su Su Staff',
             'email' => 'staff@slayna.com',
             'password' => $password,
-            'role' => 'staff',
-        ]);
-
-        $staff->staffProfile()->create([
             'managed_by' => $admin->id,
             'position' => 'Sales Associate',
             'hired_on' => now()->toDateString(),
         ]);
 
-        $customer = User::create([
+        $customer = Customer::create([
             'name' => 'Aung Customer',
             'email' => 'customer@slayna.com',
             'password' => $password,
-            'role' => 'customer',
             'address' => 'No. 12, Bo Aung Kyaw Street, Yangon',
         ]);
 
@@ -85,7 +82,7 @@ class DatabaseSeeder extends Seeder
             ]);
 
             foreach ($sizes as $size) {
-                $variant = ProductVariant::create([
+                $variant = ProductSize::create([
                     'product_id' => $product->id,
                     'size_id' => $size->id,
                     'stock_quantity' => random_int(3, 15),
@@ -106,14 +103,14 @@ class DatabaseSeeder extends Seeder
 
         OrderItem::create([
             'order_id' => $order->id,
-            'variant_id' => $firstVariant->id,
+            'product_size_id' => $firstVariant->id,
             'quantity' => 1,
             'unit_price' => $firstVariant->product->price,
         ]);
 
         Payment::create([
             'order_id' => $order->id,
-            'payment_method' => 'bank_transfer',
+            'payment_method_id' => PaymentMethod::idFor('bank_transfer'),
             'payment_status' => 'confirmed',
             'confirmed_by' => $staff->id,
             'confirmed_at' => now(),

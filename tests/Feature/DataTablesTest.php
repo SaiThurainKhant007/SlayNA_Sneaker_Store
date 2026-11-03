@@ -2,15 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Brand;
-use App\Models\CartItem;
+use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\PaymentMethod;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use App\Models\Size;
-use App\Models\User;
+use App\Models\Staff;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -28,12 +31,12 @@ class DataTablesTest extends TestCase
             'brand_id' => Brand::create(['name' => 'Puma'])->id,
             'category_id' => Category::create(['name' => 'Lifestyle'])->id,
         ]);
-        $variant = ProductVariant::create(['product_id' => $product->id, 'size_id' => Size::create(['label' => '42'])->id, 'stock_quantity' => 3]);
-        $customer = User::factory()->create(['role' => 'customer']);
+        $variant = ProductSize::create(['product_id' => $product->id, 'size_id' => Size::create(['label' => '42'])->id, 'stock_quantity' => 3]);
+        $customer = Customer::factory()->create();
         $order = Order::create(['customer_id' => $customer->id, 'shipping_address' => 'Yangon', 'total_amount' => 98000, 'order_status' => 'pending']);
-        $order->items()->create(['variant_id' => $variant->id, 'quantity' => 1, 'unit_price' => 98000]);
-        Payment::create(['order_id' => $order->id, 'payment_method' => 'cod']);
-        CartItem::create(['customer_id' => $customer->id, 'variant_id' => $variant->id, 'quantity' => 1]);
+        $order->items()->create(['product_size_id' => $variant->id, 'quantity' => 1, 'unit_price' => 98000]);
+        Payment::create(['order_id' => $order->id, 'payment_method_id' => PaymentMethod::idFor('cod')]);
+        Cart::create(['customer_id' => $customer->id, 'product_size_id' => $variant->id, 'quantity' => 1]);
 
         return compact('customer');
     }
@@ -49,7 +52,7 @@ class DataTablesTest extends TestCase
     public function test_admin_tables_are_datatables(): void
     {
         $this->seedShop();
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = Admin::factory()->create();
         $this->actingAs($admin);
 
         $this->assertDataTablePage($this->get(route('admin.dashboard')), 1);
@@ -64,7 +67,7 @@ class DataTablesTest extends TestCase
     public function test_staff_tables_are_datatables(): void
     {
         $this->seedShop();
-        $this->actingAs(User::factory()->create(['role' => 'staff']));
+        $this->actingAs(Staff::factory()->create());
 
         $this->assertDataTablePage($this->get(route('staff.orders.index')), 1);
         $this->assertDataTablePage($this->get(route('staff.payments.index')), 1);
@@ -81,7 +84,7 @@ class DataTablesTest extends TestCase
         $this->assertStringNotContainsString(self::SCRIPT, $this->get(route('home'))->getContent());
 
         // Empty lists render without placeholder rows
-        $this->actingAs(User::factory()->create(['role' => 'staff']));
+        $this->actingAs(Staff::factory()->create());
         Payment::query()->delete();
         $this->assertDataTablePage($this->get(route('staff.payments.index')), 1);
     }

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use Illuminate\View\View;
 
 /** Staff home: what is waiting today, oldest first. */
@@ -15,7 +15,7 @@ class DashboardController extends Controller
     {
         $pendingOrders = Order::where('order_status', 'pending')->count();
         $pendingPayments = Payment::where('payment_status', 'pending')->count();
-        $lowStockCount = ProductVariant::lowStock()->count();
+        $lowStockCount = ProductSize::lowStock()->count();
 
         $nextOrders = Order::with(['customer', 'payment', 'items'])
             ->where('order_status', 'pending')

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,7 +14,7 @@ class InventoryController extends Controller
     {
         $onlyLow = $request->boolean('low');
 
-        $variants = ProductVariant::with(['product', 'size'])
+        $variants = ProductSize::with(['product', 'size'])
             ->get()
             ->when($onlyLow, fn ($items) => $items->filter(fn ($v) => $v->stock_quantity <= $v->product->low_stock_threshold))
             ->sortBy([
@@ -26,7 +26,7 @@ class InventoryController extends Controller
         return view('staff.inventory', compact('variants', 'onlyLow'));
     }
 
-    public function update(Request $request, ProductVariant $variant): RedirectResponse
+    public function update(Request $request, ProductSize $variant): RedirectResponse
     {
         $validated = $request->validate([
             'stock_quantity' => ['required', 'integer', 'min:0'],

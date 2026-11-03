@@ -2,13 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use App\Models\Size;
-use App\Models\User;
+use App\Models\Staff;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,15 +29,15 @@ class StoreImprovementsTest extends TestCase
         ]);
     }
 
-    private function orderFor(User $customer, int $qty, string $status = 'pending'): array
+    private function orderFor(Customer $customer, int $qty, string $status = 'pending'): array
     {
-        $variant = ProductVariant::create([
+        $variant = ProductSize::create([
             'product_id' => $this->product('Air Max 90', 200000)->id,
             'size_id' => Size::firstOrCreate(['label' => '42'])->id,
             'stock_quantity' => 3,
         ]);
         $order = Order::create(['customer_id' => $customer->id, 'shipping_address' => 'Yangon', 'total_amount' => 200000 * $qty, 'order_status' => $status]);
-        $order->items()->create(['variant_id' => $variant->id, 'quantity' => $qty, 'unit_price' => 200000]);
+        $order->items()->create(['product_size_id' => $variant->id, 'quantity' => $qty, 'unit_price' => 200000]);
 
         return [$order, $variant];
     }
@@ -44,7 +46,7 @@ class StoreImprovementsTest extends TestCase
 
     public function test_customer_sees_a_status_timeline_for_their_own_order_only(): void
     {
-        $customer = User::factory()->create(['role' => 'customer']);
+        $customer = Customer::factory()->create();
         [$order] = $this->orderFor($customer, 1, 'shipped');
 
         $this->actingAs($customer)->get("/account/orders/{$order->id}")
@@ -53,13 +55,13 @@ class StoreImprovementsTest extends TestCase
             ->assertSee('aria-current="step"', false)
             ->assertDontSee('Cancel order');
 
-        $other = User::factory()->create(['role' => 'customer']);
+        $other = Customer::factory()->create();
         $this->actingAs($other)->get("/account/orders/{$order->id}")->assertForbidden();
     }
 
     public function test_customer_can_cancel_a_pending_order_and_stock_returns(): void
     {
-        $customer = User::factory()->create(['role' => 'customer']);
+        $customer = Customer::factory()->create();
         [$order, $variant] = $this->orderFor($customer, 2);
 
         $this->actingAs($customer)->get("/account/orders/{$order->id}")->assertSee('Cancel order');
@@ -75,7 +77,7 @@ class StoreImprovementsTest extends TestCase
 
     public function test_confirmed_orders_cannot_be_cancelled_by_the_customer_or_someone_else(): void
     {
-        $customer = User::factory()->create(['role' => 'customer']);
+        $customer = Customer::factory()->create();
         [$confirmed, $variant] = $this->orderFor($customer, 1, 'confirmed');
 
         $this->actingAs($customer)->patch("/account/orders/{$confirmed->id}/cancel")->assertSessionHas('error');
@@ -83,15 +85,15 @@ class StoreImprovementsTest extends TestCase
         $this->assertSame(3, $variant->fresh()->stock_quantity);
 
         [$pending] = $this->orderFor($customer, 1);
-        $other = User::factory()->create(['role' => 'customer']);
+        $other = Customer::factory()->create();
         $this->actingAs($other)->patch("/account/orders/{$pending->id}/cancel")->assertForbidden();
         $this->assertSame('pending', $pending->fresh()->order_status);
     }
 
     public function test_staff_cancelling_twice_restocks_only_once(): void
     {
-        $customer = User::factory()->create(['role' => 'customer']);
-        $staff = User::factory()->create(['role' => 'staff']);
+        $customer = Customer::factory()->create();
+        $staff = Staff::factory()->create();
         [$order, $variant] = $this->orderFor($customer, 2, 'confirmed');
 
         $this->actingAs($staff)->patch("/staff/orders/{$order->id}", ['order_status' => 'cancelled']);
@@ -148,7 +150,7 @@ class StoreImprovementsTest extends TestCase
 
     public function test_a_customer_can_review_a_product_only_once(): void
     {
-        $customer = User::factory()->create(['role' => 'customer']);
+        $customer = Customer::factory()->create();
         [$order, $variant] = $this->orderFor($customer, 1, 'completed');
         $url = "/products/{$variant->product_id}/reviews";
 
@@ -163,8 +165,8 @@ class StoreImprovementsTest extends TestCase
 
     public function test_admin_can_download_reports_as_csv_with_formulas_neutralised(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $customer = User::factory()->create(['role' => 'customer', 'name' => '=HYPERLINK("http://evil")']);
+        $admin = Admin::factory()->create();
+        $customer = Customer::factory()->create(['name' => '=HYPERLINK("http://evil")']);
         $this->orderFor($customer, 1, 'completed');
 
         $csv = $this->actingAs($admin)->get('/admin/reports/customers.csv')
@@ -184,7 +186,7 @@ class StoreImprovementsTest extends TestCase
 
     public function test_only_admins_can_download_reports(): void
     {
-        $staff = User::factory()->create(['role' => 'staff']);
+        $staff = Staff::factory()->create();
 
         $this->actingAs($staff)->get('/admin/reports/sales.csv')->assertForbidden();
     }

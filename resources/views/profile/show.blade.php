@@ -20,13 +20,9 @@
                     <label class="form-label small" for="profile-email">Email</label>
                     <input type="email" id="profile-email" class="form-control form-control-sm" value="{{ $user->email }}" disabled>
                 </div>
-                <div class="mb-2">
+                <div class="mb-3">
                     <label class="form-label small" for="profile-phone">Phone</label>
                     <input type="text" id="profile-phone" name="phone" class="form-control form-control-sm" value="{{ old('phone', $user->phone) }}" maxlength="30">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small" for="profile-address">Address</label>
-                    <textarea id="profile-address" name="address" class="form-control form-control-sm" rows="2" maxlength="255">{{ old('address', $user->address) }}</textarea>
                 </div>
                 <button type="submit" class="btn btn-dark btn-sm">Save Changes</button>
             </form>
@@ -39,13 +35,13 @@
             <dl class="row small mb-0">
                 <dt class="col-5 text-muted fw-normal">Role</dt>
                 <dd class="col-7 text-capitalize">{{ $user->role }}</dd>
-                @if ($user->staffProfile)
+                @if ($user->isStaff())
                     <dt class="col-5 text-muted fw-normal">Position</dt>
-                    <dd class="col-7">{{ $user->staffProfile->position ?? '—' }}</dd>
+                    <dd class="col-7">{{ $user->position ?? '—' }}</dd>
                     <dt class="col-5 text-muted fw-normal">Managed by</dt>
-                    <dd class="col-7">{{ $user->staffProfile->manager?->name ?? '—' }}</dd>
+                    <dd class="col-7">{{ $user->manager?->name ?? '—' }}</dd>
                     <dt class="col-5 text-muted fw-normal">Hired</dt>
-                    <dd class="col-7">{{ $user->staffProfile->hired_on?->format('d M Y') ?? '—' }}</dd>
+                    <dd class="col-7">{{ $user->hired_on?->format('d M Y') ?? '—' }}</dd>
                 @endif
                 <dt class="col-5 text-muted fw-normal">Member since</dt>
                 <dd class="col-7 mb-0">{{ $user->created_at->format('d M Y') }}</dd>

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\ProductVariant;
-use App\Models\User;
+use App\Models\ProductSize;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -75,8 +75,8 @@ class ReportController extends Controller
     private function topProducts(): Collection
     {
         return OrderItem::query()
-            ->join('product_variants', 'product_variants.id', '=', 'order_items.variant_id')
-            ->join('products', 'products.id', '=', 'product_variants.product_id')
+            ->join('product_sizes', 'product_sizes.id', '=', 'order_items.product_size_id')
+            ->join('products', 'products.id', '=', 'product_sizes.product_id')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->where('orders.order_status', '!=', 'cancelled')
             ->groupBy('products.id', 'products.name')
@@ -91,7 +91,7 @@ class ReportController extends Controller
 
     private function inventoryReport(): Collection
     {
-        return ProductVariant::with(['product', 'size'])
+        return ProductSize::with(['product', 'size'])
             ->orderBy('stock_quantity')
             ->take(30)
             ->get();
@@ -99,7 +99,7 @@ class ReportController extends Controller
 
     private function customerReport(): Collection
     {
-        return User::where('role', 'customer')
+        return Customer::query()
             ->withCount(['orders' => fn ($q) => $q->where('order_status', '!=', 'cancelled')])
             ->get()
             ->map(function ($customer) {

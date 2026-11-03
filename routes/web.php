@@ -123,7 +123,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/staff', [AdminUserController::class, 'index'])->name('staff.index');
     Route::post('/staff', [AdminUserController::class, 'store'])->name('staff.store');
-    Route::patch('/staff/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('staff.toggle-status');
+    Route::patch('/staff/{staff}/toggle-status', [AdminUserController::class, 'toggleStaff'])->name('staff.toggle-status');
+    Route::patch('/admins/{admin}/toggle-status', [AdminUserController::class, 'toggleAdmin'])->name('admins.toggle-status');
 
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/{report}.csv', [AdminReportController::class, 'export'])

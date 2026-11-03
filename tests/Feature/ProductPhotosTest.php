@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Admin\ProductController;
+use App\Models\Admin;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Size;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +38,7 @@ class ProductPhotosTest extends TestCase
         parent::setUp();
         Storage::fake('public');
         Size::create(['label' => '42']);
-        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        $this->actingAs(Admin::factory()->create());
     }
 
     public function test_first_chosen_photo_is_main_and_the_rest_are_extras(): void

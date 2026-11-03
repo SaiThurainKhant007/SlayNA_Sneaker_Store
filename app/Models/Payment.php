@@ -12,6 +12,8 @@ class Payment extends Model
 {
     use HasFactory;
 
+    protected $with = ['paymentMethod'];
+
     protected function casts(): array
     {
         return [
@@ -24,19 +26,19 @@ class Payment extends Model
         return $this->belongsTo(Order::class);
     }
 
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class);
+    }
+
     /** Human-readable payment method, e.g. "KPay" or "Cash on Delivery". */
     public function methodLabel(): string
     {
-        return config('payments.wallets.'.$this->payment_method.'.short')
-            ?? match ($this->payment_method) {
-                'cod' => 'Cash on Delivery',
-                'saved_card' => 'Saved Card',
-                default => 'Bank Transfer',
-            };
+        return $this->paymentMethod->name;
     }
 
     public function confirmedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'confirmed_by');
+        return $this->belongsTo(Staff::class, 'confirmed_by');
     }
 }

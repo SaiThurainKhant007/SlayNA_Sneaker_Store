@@ -46,7 +46,7 @@ class Product extends Model
 
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class);
+        return $this->hasMany(ProductSize::class);
     }
 
     public function reviews(): HasMany
@@ -75,7 +75,7 @@ class Product extends Model
     public function scopeLowStock(Builder $query): Builder
     {
         return $query->where('status', 'active')
-            ->whereHas('variants', fn ($q) => $q->whereColumn('product_variants.stock_quantity', '<=', 'products.low_stock_threshold'));
+            ->whereHas('variants', fn ($q) => $q->whereColumn('product_sizes.stock_quantity', '<=', 'products.low_stock_threshold'));
     }
 
     public function totalStock(): int

@@ -1,36 +1,80 @@
 # SlayNa Sneaker Store — Class Diagram
 
-UML class diagram of the Eloquent models in `app/Models`. Attributes come from
-`database/migrations`; methods are the public model methods (relationship
-accessors are shown as associations). A filled diamond (`*--`) marks a
-cascade-delete composition.
+UML class diagram of the Eloquent models in `app/Models`. Each class is one
+database table; attributes are the table's columns (from `database/migrations`)
+and methods are the public model methods (relationships are drawn as
+associations). A filled diamond (`*--`) marks a cascade-delete composition.
+
+Admin, Staff and Customer are separate tables, each with its own login guard
+(`admin`, `staff`, `web` in `config/auth.php`). An email can only belong to one
+of them.
+
+**Keep this file and the database in sync:** any table or column change here
+needs a migration, and any migration that changes the schema needs this
+diagram updated.
 
 GitHub and VS Code (with a Mermaid extension) render this diagram directly.
+
+| Class | Table |
+|---|---|
+| Admin | `admins` |
+| Staff | `staff` |
+| Customer | `customers` |
+| SavedCard | `saved_cards` |
+| Cart | `carts` |
+| Order | `orders` |
+| OrderItem | `order_items` |
+| Payment | `payments` |
+| PaymentMethod | `payment_methods` |
+| Review | `reviews` |
+| Product | `products` |
+| ProductSize | `product_sizes` |
+| ProductImage | `product_images` |
+| Promotion | `promotions` |
+| GalleryImage | `gallery_images` |
+| Brand | `brands` |
+| Category | `categories` |
+| Size | `sizes` |
 
 ```mermaid
 classDiagram
 direction TB
-class User {
+class Admin {
+  +int id
+  +string name
+  +string email
+  -string password
+  +string phone
+  +enum status
+  +datetime created_at
+  +isAdmin() bool
+  +isActive() bool
+}
+class Staff {
+  +int id
+  +string name
+  +string email
+  -string password
+  +string phone
+  +int managed_by
+  +string position
+  +date hired_on
+  +enum status
+  +datetime created_at
+  +isStaff() bool
+  +isActive() bool
+}
+class Customer {
   +int id
   +string name
   +string email
   -string password
   +string phone
   +string address
-  +enum role
   +enum status
+  +datetime created_at
   +isCustomer() bool
-  +isStaff() bool
-  +isAdmin() bool
-}
-class Staff {
-  +int id
-  +int user_id
-  +int managed_by
-  +string position
-  +date hired_on
-  +processedOrders()
-  +confirmedPayments()
+  +isActive() bool
 }
 class SavedCard {
   +int id
@@ -41,11 +85,12 @@ class SavedCard {
   +int expiry_month
   +int expiry_year
 }
-class CartItem {
+class Cart {
   +int id
   +int customer_id
-  +int variant_id
+  +int product_size_id
   +int quantity
+  +datetime created_at
   +subtotal() float
 }
 class Order {
@@ -67,7 +112,7 @@ class Order {
 class OrderItem {
   +int id
   +int order_id
-  +int variant_id
+  +int product_size_id
   +int quantity
   +decimal unit_price
   +decimal original_price
@@ -81,13 +126,20 @@ class OrderItem {
 class Payment {
   +int id
   +int order_id
-  +enum payment_method
+  +int payment_method_id
   +string proof_image
   +string transaction_ref
   +enum payment_status
   +int confirmed_by
   +datetime confirmed_at
+  +datetime created_at
   +methodLabel() string
+}
+class PaymentMethod {
+  +int id
+  +string code
+  +string name
+  +idFor(code)$ int
 }
 class Review {
   +int id
@@ -96,6 +148,7 @@ class Review {
   +int order_id
   +int rating
   +text comment
+  +datetime created_at
 }
 class Product {
   +int id
@@ -114,12 +167,13 @@ class Product {
   +galleryUrls() array
   +scopeLowStock()
 }
-class ProductVariant {
+class ProductSize {
   +int id
   +int product_id
   +int size_id
   +int stock_quantity
   +isLowStock() bool
+  +scopeLowStock()
 }
 class ProductImage {
   +int id
@@ -169,26 +223,26 @@ class Size {
   +int id
   +string label
 }
-User "1" -- "0..1" Staff : staffProfile
-User "1" -- "0..*" Staff : manages
-User "1" *-- "0..*" SavedCard : owns
-User "1" *-- "0..*" CartItem : cart
-User "1" -- "0..*" Order : places
-User "0..1" -- "0..*" Order : processes
-User "0..1" -- "0..*" Payment : confirms
-User "1" -- "0..*" Review : writes
-Order "1" *-- "1..*" OrderItem : items
-Order "1" *-- "0..1" Payment : payment
+Admin "1" -- "0..*" Staff : manages
+Customer "1" *-- "0..*" SavedCard : saves
+Customer "1" *-- "0..*" Cart : adds to
+Customer "1" -- "0..*" Order : places
+Customer "1" -- "0..*" Review : writes
+Staff "0..1" -- "0..*" Order : processes
+Staff "0..1" -- "0..*" Payment : confirms
+Order "1" *-- "1..*" OrderItem : contains
+Order "1" *-- "0..1" Payment : paid by
 Order "1" -- "0..*" Review : verifies
-Brand "1" -- "0..*" Product
-Category "1" -- "0..*" Product
-Product "1" *-- "1..*" ProductVariant : variants
-Size "1" -- "0..*" ProductVariant
-Product "1" *-- "0..*" ProductImage : images
-Product "1" -- "0..*" Promotion : promotions
-Product "0..1" -- "0..*" GalleryImage
-Product "1" -- "0..*" Review : reviews
-ProductVariant "1" -- "0..*" CartItem
-ProductVariant "1" -- "0..*" OrderItem
+PaymentMethod "1" -- "0..*" Payment : used for
+Brand "1" -- "0..*" Product : makes
+Category "1" -- "0..*" Product : groups
+Product "1" *-- "0..*" ProductSize : available in
+Size "1" -- "0..*" ProductSize : used by
+Product "1" *-- "0..*" ProductImage : photos
+Product "1" -- "0..*" Promotion : discounts
+Product "0..1" -- "0..*" GalleryImage : featured in
+Product "1" -- "0..*" Review : rates
+ProductSize "1" -- "0..*" Cart : holds
+ProductSize "1" -- "0..*" OrderItem : orders
 Promotion "0..1" -- "0..*" OrderItem : applied
 ```

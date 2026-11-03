@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('staffCounts', [
                 'orders' => Order::where('order_status', 'pending')->count(),
                 'payments' => Payment::where('payment_status', 'pending')->count(),
-                'lowStock' => ProductVariant::lowStock()->count(),
+                'lowStock' => ProductSize::lowStock()->count(),
             ]);
         });
     }

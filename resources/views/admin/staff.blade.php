@@ -11,24 +11,25 @@
         <table class="table table-sm align-middle text-nowrap js-datatable" data-empty="No staff or admin accounts.">
             <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Position</th><th>Managed By</th><th>Status</th><th data-orderable="false" data-searchable="false">Actions</th></tr></thead>
             <tbody>
-                @foreach ($staffAndAdmins as $user)
+                {{-- Admins and staff live in separate tables; listed together here --}}
+                @foreach ($admins->concat($staff) as $user)
                     <tr>
                         <td>{{ $user->name }}</td>
                         <td>{{ $user->email }}</td>
                         <td><span class="badge bg-secondary text-uppercase">{{ $user->role }}</span></td>
-                        <td>{{ $user->staffProfile?->position ?? '—' }}</td>
-                        <td>{{ $user->staffProfile?->manager?->name ?? '—' }}</td>
+                        <td>{{ $user->isStaff() ? ($user->position ?? '—') : '—' }}</td>
+                        <td>{{ $user->isStaff() ? ($user->manager?->name ?? '—') : '—' }}</td>
                         <td><span class="badge bg-{{ $user->status === 'active' ? 'success' : 'danger' }}">{{ $user->status }}</span></td>
                         <td>
-                            @if ($user->id !== auth()->id())
-                                <form method="POST" action="{{ route('admin.staff.toggle-status', $user) }}">
+                            @unless ($user->is(auth()->user()))
+                                <form method="POST" action="{{ $user->isStaff() ? route('admin.staff.toggle-status', $user) : route('admin.admins.toggle-status', $user) }}">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit" class="btn btn-sm btn-outline-secondary">
                                         {{ $user->status === 'active' ? 'Disable' : 'Enable' }}
                                     </button>
                                 </form>
-                            @endif
+                            @endunless
                         </td>
                     </tr>
                 @endforeach

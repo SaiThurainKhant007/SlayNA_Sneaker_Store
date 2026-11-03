@@ -2,15 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Brand;
-use App\Models\CartItem;
+use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\GalleryImage;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use App\Models\Promotion;
 use App\Models\Size;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -43,7 +44,7 @@ class ImageCropperTest extends TestCase
         Promotion::create(['title' => 'Sale', 'product_id' => $product->id, 'discount_percent' => 10, 'is_active' => true]);
         GalleryImage::create(['image_path' => 'gallery/x.jpg', 'sort_order' => 1, 'is_active' => true]);
 
-        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        $this->actingAs(Admin::factory()->create());
 
         $this->assertCropperPage($this->get(route('admin.brands.index')), ['free']);
         $this->assertCropperPage($this->get(route('admin.gallery.index')), ['4/5']);
@@ -58,9 +59,9 @@ class ImageCropperTest extends TestCase
     public function test_checkout_payment_screenshot_uses_the_cropper(): void
     {
         $product = Product::create(['name' => 'Suede', 'price' => 98000, 'brand_id' => Brand::create(['name' => 'Puma'])->id, 'category_id' => Category::create(['name' => 'Lifestyle'])->id]);
-        $variant = ProductVariant::create(['product_id' => $product->id, 'size_id' => Size::create(['label' => '42'])->id, 'stock_quantity' => 3]);
-        $customer = User::factory()->create(['role' => 'customer']);
-        CartItem::create(['customer_id' => $customer->id, 'variant_id' => $variant->id, 'quantity' => 1]);
+        $variant = ProductSize::create(['product_id' => $product->id, 'size_id' => Size::create(['label' => '42'])->id, 'stock_quantity' => 3]);
+        $customer = Customer::factory()->create();
+        Cart::create(['customer_id' => $customer->id, 'product_size_id' => $variant->id, 'quantity' => 1]);
 
         $this->actingAs($customer);
         $this->assertCropperPage($this->get(route('checkout.show')), ['free']);

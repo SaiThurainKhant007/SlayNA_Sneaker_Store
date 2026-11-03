@@ -4,11 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\ProductVariant;
+use App\Models\ProductSize;
 use App\Models\Size;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,7 +17,7 @@ class ShoppingTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeVariant(int $stock = 10): ProductVariant
+    private function makeVariant(int $stock = 10): ProductSize
     {
         $product = Product::create([
             'name' => 'Air Zoom Pegasus',
@@ -26,7 +26,7 @@ class ShoppingTest extends TestCase
             'category_id' => Category::create(['name' => 'Running'])->id,
         ]);
 
-        return ProductVariant::create([
+        return ProductSize::create([
             'product_id' => $product->id,
             'size_id' => Size::create(['label' => '41'])->id,
             'stock_quantity' => $stock,
@@ -45,9 +45,9 @@ class ShoppingTest extends TestCase
     public function test_checkout_decrements_stock_and_creates_a_pending_order(): void
     {
         $variant = $this->makeVariant(stock: 5);
-        $customer = User::factory()->create(['role' => 'customer', 'address' => 'Yangon']);
+        $customer = Customer::factory()->create(['address' => 'Yangon']);
 
-        $this->actingAs($customer)->post('/cart', ['variant_id' => $variant->id, 'quantity' => 2])
+        $this->actingAs($customer)->post('/cart', ['product_size_id' => $variant->id, 'quantity' => 2])
             ->assertRedirect(route('cart.index'));
 
         $this->actingAs($customer)->post('/checkout', [
@@ -67,9 +67,9 @@ class ShoppingTest extends TestCase
     public function test_checkout_rejects_orders_that_exceed_available_stock(): void
     {
         $variant = $this->makeVariant(stock: 1);
-        $customer = User::factory()->create(['role' => 'customer']);
+        $customer = Customer::factory()->create();
 
-        $customer->cartItems()->create(['variant_id' => $variant->id, 'quantity' => 1]);
+        $customer->cartItems()->create(['product_size_id' => $variant->id, 'quantity' => 1]);
         // Simulate stock disappearing after it was added to the cart (e.g. another customer bought it).
         $variant->update(['stock_quantity' => 0]);
 
@@ -84,7 +84,7 @@ class ShoppingTest extends TestCase
     public function test_customer_can_only_review_a_product_from_a_completed_order(): void
     {
         $variant = $this->makeVariant();
-        $customer = User::factory()->create(['role' => 'customer']);
+        $customer = Customer::factory()->create();
 
         // No order yet — review must be rejected.
         $this->actingAs($customer)->post("/products/{$variant->product_id}/reviews", [
@@ -98,7 +98,7 @@ class ShoppingTest extends TestCase
             'total_amount' => 145000,
             'order_status' => 'completed',
         ]);
-        $order->items()->create(['variant_id' => $variant->id, 'quantity' => 1, 'unit_price' => 145000]);
+        $order->items()->create(['product_size_id' => $variant->id, 'quantity' => 1, 'unit_price' => 145000]);
 
         $this->actingAs($customer)->post("/products/{$variant->product_id}/reviews", [
             'rating' => 5,

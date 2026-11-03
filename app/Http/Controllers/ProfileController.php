@@ -20,17 +20,20 @@ class ProfileController extends Controller
         }
 
         $layout = $user->isAdmin() ? 'layouts.admin' : 'layouts.staff';
-        $user->load('staffProfile.manager');
+
+        if ($user->isStaff()) {
+            $user->load('manager');
+        }
 
         return view('profile.show', compact('user', 'layout'));
     }
 
     public function update(Request $request): RedirectResponse
     {
+        // Address is a customer-only column; staff and admins keep name + phone
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:255'],
         ]);
 
         $request->user()->update($validated);

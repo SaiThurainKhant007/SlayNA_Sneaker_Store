@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Brand;
-use App\Models\User;
+use App\Models\Customer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +24,7 @@ class BrandLogoTest extends TestCase
     public function test_admin_can_add_a_brand_with_a_logo_that_appears_on_home_and_brands_pages(): void
     {
         Storage::fake('public');
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = Admin::factory()->create();
 
         $this->actingAs($admin)->post('/admin/brands', [
             'name' => 'Converse',
@@ -42,7 +43,7 @@ class BrandLogoTest extends TestCase
     public function test_admin_can_replace_hide_and_remove_a_logo(): void
     {
         Storage::fake('public');
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = Admin::factory()->create();
         $brand = Brand::create(['name' => 'Vans', 'logo_path' => $this->logo('old.png')->store('brands', 'public'), 'show_in_marquee' => true]);
         $oldPath = $brand->logo_path;
 
@@ -67,7 +68,7 @@ class BrandLogoTest extends TestCase
     public function test_deleting_a_brand_deletes_its_logo_file(): void
     {
         Storage::fake('public');
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = Admin::factory()->create();
         $brand = Brand::create(['name' => 'Fila', 'logo_path' => $this->logo()->store('brands', 'public')]);
 
         $this->actingAs($admin)->delete("/admin/brands/{$brand->id}")->assertRedirect(route('admin.brands.index'));
@@ -79,8 +80,8 @@ class BrandLogoTest extends TestCase
     public function test_non_image_files_are_rejected_and_customers_cannot_manage_brands(): void
     {
         Storage::fake('public');
-        $admin = User::factory()->create(['role' => 'admin']);
-        $customer = User::factory()->create(['role' => 'customer']);
+        $admin = Admin::factory()->create();
+        $customer = Customer::factory()->create();
 
         $this->actingAs($admin)->post('/admin/brands', [
             'name' => 'Bad Logo',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\PaymentMethod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,7 +78,7 @@ class CheckoutController extends Controller
 
                     // Promotion price is applied automatically; the promotion is recorded on the line for staff
                     $order->items()->create([
-                        'variant_id' => $item->variant_id,
+                        'product_size_id' => $item->product_size_id,
                         'quantity' => $item->quantity,
                         'unit_price' => $product->effectivePrice(),
                         'original_price' => $promo ? $product->price : null,
@@ -96,7 +97,7 @@ class CheckoutController extends Controller
 
                 Payment::create([
                     'order_id' => $order->id,
-                    'payment_method' => $validated['payment_method'],
+                    'payment_method_id' => PaymentMethod::idFor($validated['payment_method']),
                     'proof_image' => $proofPath,
                     'transaction_ref' => in_array($validated['payment_method'], $wallets, true) ? ($validated['transaction_ref'] ?? null) : null,
                     'payment_status' => 'pending',

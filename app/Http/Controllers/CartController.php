@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProductVariant;
+use App\Models\Cart;
+use App\Models\ProductSize;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -25,11 +26,11 @@ class CartController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+            'product_size_id' => ['required', 'integer', 'exists:product_sizes,id'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:10'],
         ]);
 
-        $variant = ProductVariant::findOrFail($validated['variant_id']);
+        $variant = ProductSize::findOrFail($validated['product_size_id']);
         $quantity = max(1, min(10, (int) ($validated['quantity'] ?? 1)));
 
         if ($variant->stock_quantity < $quantity) {
@@ -38,18 +39,18 @@ class CartController extends Controller
         }
 
         $customer = $request->user();
-        $existing = $customer->cartItems()->where('variant_id', $variant->id)->first();
+        $existing = $customer->cartItems()->where('product_size_id', $variant->id)->first();
 
         if ($existing) {
             $existing->update(['quantity' => min(10, $existing->quantity + $quantity)]);
         } else {
-            $customer->cartItems()->create(['variant_id' => $variant->id, 'quantity' => $quantity]);
+            $customer->cartItems()->create(['product_size_id' => $variant->id, 'quantity' => $quantity]);
         }
 
         return redirect()->route('cart.index')->with('success', 'Added to cart.');
     }
 
-    public function update(Request $request, \App\Models\CartItem $cartItem): RedirectResponse
+    public function update(Request $request, Cart $cartItem): RedirectResponse
     {
         $this->authorizeOwnership($request, $cartItem);
 
@@ -62,7 +63,7 @@ class CartController extends Controller
         return redirect()->route('cart.index')->with('success', 'Cart updated.');
     }
 
-    public function destroy(Request $request, \App\Models\CartItem $cartItem): RedirectResponse
+    public function destroy(Request $request, Cart $cartItem): RedirectResponse
     {
         $this->authorizeOwnership($request, $cartItem);
 
@@ -71,7 +72,7 @@ class CartController extends Controller
         return redirect()->route('cart.index')->with('success', 'Item removed from cart.');
     }
 
-    private function authorizeOwnership(Request $request, \App\Models\CartItem $cartItem): void
+    private function authorizeOwnership(Request $request, Cart $cartItem): void
     {
         if ($cartItem->customer_id !== $request->user()->id) {
             abort(403);

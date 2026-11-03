@@ -1,14 +1,15 @@
 """Shared builder for the StarUML 6 Flowchart files (make_customer_flowchart.py, make_admin_flowchart.py).
 
 Nodes are {key: (shape, text, column, row)}; flows are (source, side, target, side, label, bends),
-where a side is T/B/L/R and a bend is (x or node key, row).
+where a side is T/B/L/R and a bend is (x or node key, row). Columns and rows may be fractional.
 """
 import base64, json
 
 FONT = "Arial;13;0"
-COL_X = {-1: 200, 0: 500, 1: 800, 2: 1100, 3: 1400}   # column centre x
-ROW_H = 100                                            # row centre y = 60 + row * ROW_H
-SIZES = {"Terminator": (140, 40), "Process": (220, 50), "Data": (230, 50), "Decision": (200, 70)}
+COL_W = 300   # column centre x = 500 + column * COL_W
+ROW_H = 100   # row centre y = 60 + row * ROW_H
+SIZES = {"Terminator": (140, 40), "Process": (220, 50), "Data": (230, 50), "Decision": (200, 70),
+         "AlternateProcess": (240, 50)}
 
 
 def build(out, chart_name, diagram_name, nodes, flows, wide=None):
@@ -26,7 +27,7 @@ def build(out, chart_name, diagram_name, nodes, flows, wide=None):
     def box(key):
         shape, _, col, row = nodes[key]
         w, h = wide.get(key, SIZES[shape])
-        cx, cy = COL_X[col], 60 + row * ROW_H
+        cx, cy = int(500 + col * COL_W), int(60 + row * ROW_H)
         return cx - w // 2, cy - h // 2, w, h
 
     def anchor(key, side):
@@ -39,7 +40,7 @@ def build(out, chart_name, diagram_name, nodes, flows, wide=None):
         if isinstance(x, str):
             bx, _, bw, _ = box(x)
             x = bx + bw // 2
-        return x, 60 + row * ROW_H
+        return x, int(60 + row * ROW_H)
 
     project = {"_type": "Project", "_id": nid(), "name": "SlayNa Sneaker Store", "ownedElements": []}
     chart = {"_type": "FCFlowchart", "_id": nid(), "_parent": ref(project), "name": chart_name, "ownedElements": []}

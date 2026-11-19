@@ -8,13 +8,14 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductSize;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $now = now();
         // Whole periods (to end of day / month): order_date is stamped by the database clock, which can run ahead of the app clock
@@ -22,26 +23,53 @@ class DashboardController extends Controller
         $lastMonth = [$now->copy()->subMonthNoOverflow()->startOfMonth(), $now->copy()->subMonthNoOverflow()->endOfMonth()];
         $sales = fn () => Order::where('order_status', '!=', 'cancelled');
 
-        // KPI tiles: an all-time total plus how this month compares with last month
-        $kpis = [
-            'orders' => [
-                'total' => Order::count(),
-                'delta' => $this->change(Order::whereBetween('order_date', $thisMonth)->count(), Order::whereBetween('order_date', $lastMonth)->count()),
-            ],
-            'customers' => [
-                'total' => Customer::count(),
-                'delta' => $this->change(Customer::whereBetween('created_at', $thisMonth)->count(), Customer::whereBetween('created_at', $lastMonth)->count()),
-            ],
-            'products' => [
-                'total' => Product::where('status', 'active')->count(),
-                'delta' => $this->change(Product::whereBetween('created_at', $thisMonth)->count(), Product::whereBetween('created_at', $lastMonth)->count()),
-            ],
-            'sales' => [
-                'total' => (float) $sales()->sum('total_amount'),
-                'delta' => $this->change((float) $sales()->whereBetween('order_date', $thisMonth)->sum('total_amount'), (float) $sales()->whereBetween('order_date', $lastMonth)->sum('total_amount')),
-            ],
-            'lowStock' => Product::lowStock()->count(),
+        // KPI tiles: each tile has its own optional start/end date (e.g. ?orders[from]=2026-11-01&orders[to]=2026-11-12).
+        // No dates: all-time total, this month vs last month. With dates: total inside the range, compared with
+        // the period of the same length just before it.
+        $metrics = [
+            'orders' => fn ($range) => Order::when($range, fn ($q) => $q->whereBetween('order_date', $range))->count(),
+            'customers' => fn ($range) => Customer::when($range, fn ($q) => $q->whereBetween('created_at', $range))->count(),
+            'products' => fn ($range) => Product::where('status', 'active')->when($range, fn ($q) => $q->whereBetween('created_at', $range))->count(),
+            'sales' => fn ($range) => (float) $sales()->when($range, fn ($q) => $q->whereBetween('order_date', $range))->sum('total_amount'),
         ];
+        $newThisPeriod = [
+            'orders' => fn ($range) => Order::whereBetween('order_date', $range)->count(),
+            'customers' => fn ($range) => Customer::whereBetween('created_at', $range)->count(),
+            'products' => fn ($range) => Product::whereBetween('created_at', $range)->count(),
+            'sales' => fn ($range) => (float) $sales()->whereBetween('order_date', $range)->sum('total_amount'),
+        ];
+
+        $kpis = [];
+        foreach ($metrics as $key => $metric) {
+            $filter = $this->dateFilter($request->input($key));
+
+            if ($filter === null) {
+                $kpis[$key] = [
+                    'total' => $metric(null),
+                    'delta' => $this->change($newThisPeriod[$key]($thisMonth), $newThisPeriod[$key]($lastMonth)),
+                    'compare' => 'last month',
+                    'period' => 'this month',
+                    'from' => null,
+                    'to' => null,
+                ];
+                continue;
+            }
+
+            [$from, $to] = $filter;
+            $days = (int) $from->diffInDays($to) + 1;
+            $previous = [$from->copy()->subDays($days), $from->copy()->subDay()->endOfDay()];
+
+            $kpis[$key] = [
+                'total' => $metric([$from, $to]),
+                'delta' => $this->change($metric([$from, $to]), $metric($previous)),
+                'compare' => 'previous '.$days.' '.str('day')->plural($days),
+                'period' => 'in range',
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+            ];
+        }
+
+        $kpis['lowStock'] = Product::lowStock()->count();
 
         $chart = [
             'week' => ['label' => 'Last 7 days', 'bars' => $this->dailySales($now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay(), 'D j')],
@@ -87,6 +115,43 @@ class DashboardController extends Controller
         return view('admin.dashboard', compact('kpis', 'chart', 'lowStock', 'recentOrders', 'topProducts'));
     }
 
+    /**
+     * A tile's [start of from-day, end of to-day] range, or null when no valid date was given.
+     * A missing end date means today; a missing start date means the same day as the end.
+     */
+    private function dateFilter(mixed $input): ?array
+    {
+        if (! is_array($input)) {
+            return null;
+        }
+
+        $parse = function ($value): ?Carbon {
+            if (! is_string($value) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                return null;
+            }
+            try {
+                return Carbon::createFromFormat('!Y-m-d', $value);
+            } catch (\Throwable) {
+                return null;
+            }
+        };
+
+        $from = $parse($input['from'] ?? null);
+        $to = $parse($input['to'] ?? null);
+
+        if (! $from && ! $to) {
+            return null;
+        }
+
+        $to ??= now()->startOfDay();
+        $from ??= $to->copy();
+        if ($from->gt($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        return [$from->startOfDay(), $to->endOfDay()];
+    }
+
     /** Percent change, or null when there is no previous figure to compare with. */
     private function change(float $current, float $previous): ?array
     {
@@ -121,7 +186,7 @@ class DashboardController extends Controller
     {
         $totals = Order::where('order_status', '!=', 'cancelled')
             ->whereBetween('order_date', [$from, $to])
-            ->selectRaw("DATE_FORMAT(order_date, '%Y-%m') as m, SUM(total_amount) as total, COUNT(*) as orders")
+            ->selectRaw('SUBSTR(order_date, 1, 7) as m, SUM(total_amount) as total, COUNT(*) as orders') // YYYY-MM on both MySQL and SQLite
             ->groupBy('m')
             ->get()
             ->keyBy('m');

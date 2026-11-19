@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@hasSection('title')@yield('title') - @endif{{ config('app.name') }}</title>
     {{-- Search results and link previews (Facebook, Viber, Messenger); product pages set their own description and photo --}}
-    <meta name="description" content="@yield('description', 'Authentic sneakers from Nike, Adidas, Jordan and more, delivered across Yangon and Myanmar. Pay by KPay, AYA Pay or cash on delivery.')">
+    <meta name="description" content="@yield('description', 'Authentic sneakers from Nike, Adidas, Jordan and more, delivered across Yangon and Myanmar. Pay by KPay or AYA Pay.')">
     <meta property="og:site_name" content="{{ config('app.name') }}">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@hasSection('title')@yield('title') - @endif{{ config('app.name') }}">
@@ -32,8 +32,9 @@
 <body>
 <nav class="navbar navbar-expand-xl sl-nav sticky-top">
     <div class="container">
-        <a class="navbar-brand sl-logo" href="{{ route('home') }}">
-            SLAY<span>NA</span><small>SNEAKER STORE</small>
+        <a class="navbar-brand sl-logo sl-brand" href="{{ route('home') }}">
+            @include('partials._logo_mark', ['id' => 'sl-mark-nav'])
+            <span class="sl-logo-text">SLAY<span>NA</span><small>SNEAKER STORE</small></span>
         </a>
         <div class="d-flex align-items-center ms-auto d-xl-none">
             <button type="button" class="sl-theme-btn" data-theme-toggle aria-label="Switch to dark mode" title="Light / dark mode"><i class="bi bi-moon-stars-fill" aria-hidden="true"></i><i class="bi bi-sun-fill" aria-hidden="true"></i></button>
@@ -139,8 +140,17 @@
     <div class="container">
         <div class="row g-4">
             <div class="col-lg-4">
-                <a href="{{ route('home') }}" class="sl-logo sl-footer-logo">SLAY<span>NA</span><small>SNEAKER STORE</small></a>
+                <a href="{{ route('home') }}" class="sl-logo sl-footer-logo sl-brand">@include('partials._logo_mark', ['id' => 'sl-mark-foot'])<span class="sl-logo-text">SLAY<span>NA</span><small>SNEAKER STORE</small></span></a>
                 <p class="sl-footer-tagline">Authentic sneakers from the world's top brands, delivered across Yangon and Myanmar.</p>
+                <ul class="sl-footer-social" aria-label="SlayNa on social media">
+                    @foreach ($shop['social'] ?? [] as $social)
+                        <li>
+                            <a href="{{ $social['url'] }}" target="_blank" rel="noopener" title="{{ $social['name'] }}" aria-label="SlayNa on {{ $social['name'] }} (opens in a new tab)">
+                                <i class="bi bi-{{ $social['icon'] }}" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
             </div>
 
             <div class="col-6 col-md-3 col-lg-2">

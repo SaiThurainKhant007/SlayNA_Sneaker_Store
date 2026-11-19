@@ -69,6 +69,28 @@ class StaffTest extends TestCase
         $this->assertSame(7, $variant->fresh()->stock_quantity);
     }
 
+    public function test_a_cancelled_order_cannot_be_reopened_so_stock_is_not_restocked_twice(): void
+    {
+        ['order' => $order, 'variant' => $variant] = $this->makeOrder(stock: 5, qty: 2);
+        $staff = Staff::factory()->create();
+
+        $this->actingAs($staff)->patch("/staff/orders/{$order->id}", ['order_status' => 'cancelled']);
+
+        $this->actingAs($staff)->patch("/staff/orders/{$order->id}", ['order_status' => 'processing'])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+        $this->assertSame('cancelled', $order->fresh()->order_status);
+
+        $this->actingAs($staff)->patch("/staff/orders/{$order->id}", ['order_status' => 'cancelled']);
+        $this->assertSame(7, $variant->fresh()->stock_quantity);
+
+        // The page offers no status form for it
+        $this->actingAs($staff)->get(route('staff.orders.index'))
+            ->assertOk()
+            ->assertDontSee(route('staff.orders.update', $order), false)
+            ->assertSee('Cannot be changed');
+    }
+
     public function test_confirming_payment_advances_a_pending_order_to_confirmed(): void
     {
         ['order' => $order, 'payment' => $payment] = $this->makeOrder();
@@ -79,5 +101,30 @@ class StaffTest extends TestCase
 
         $this->assertSame('confirmed', $payment->fresh()->payment_status);
         $this->assertSame('confirmed', $order->fresh()->order_status);
+    }
+
+    public function test_a_reviewed_payment_cannot_be_decided_again(): void
+    {
+        ['order' => $order, 'payment' => $payment] = $this->makeOrder();
+        $firstStaff = Staff::factory()->create();
+        $url = "/staff/payments/{$payment->id}";
+
+        $this->actingAs($firstStaff)->patch($url, ['decision' => 'rejected']);
+
+        $this->actingAs(Staff::factory()->create())->patch($url, ['decision' => 'confirmed'])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        // The first decision and who made it stay as they were
+        $payment->refresh();
+        $this->assertSame('rejected', $payment->payment_status);
+        $this->assertSame($firstStaff->id, $payment->confirmed_by);
+        $this->assertSame('pending', $order->fresh()->order_status);
+
+        // The page offers no buttons for it
+        $this->get(route('staff.payments.index'))
+            ->assertOk()
+            ->assertDontSee(route('staff.payments.update', $payment), false)
+            ->assertSee('Reviewed');
     }
 }

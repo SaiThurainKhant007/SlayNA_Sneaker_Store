@@ -27,6 +27,11 @@ class PaymentController extends Controller
             'decision' => ['required', 'in:confirmed,rejected'],
         ]);
 
+        // A decision is final: changing it would overwrite who reviewed the payment and could confirm a rejected one
+        if ($payment->payment_status !== 'pending') {
+            return back()->with('error', "The payment for order #{$payment->order_id} has already been reviewed.");
+        }
+
         $payment->update([
             'payment_status' => $validated['decision'],
             'confirmed_by' => $request->user()->id,

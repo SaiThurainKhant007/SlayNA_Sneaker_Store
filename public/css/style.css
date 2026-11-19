@@ -14,6 +14,50 @@ body {
     color: #f5a623;
 }
 
+/* Clickable star rating: radios run 5 to 1, displayed reversed, so "~" reaches the lower stars */
+.sl-star-input {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 0.25rem;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.sl-star-input label {
+    color: #8a8f98;
+    cursor: pointer;
+    transition: color 0.1s;
+}
+
+.sl-star-input input:checked ~ label,
+.sl-star-input label:hover,
+.sl-star-input label:hover ~ label {
+    color: #f5a623;
+}
+
+.sl-star-input input:focus-visible + label {
+    outline: 2px solid #f5a623;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Product-card stars you can click: buttons run 5 to 1 and display reversed, so hovering lights a star and those before it */
+.sl-rate-stars { display: inline-flex; flex-direction: row-reverse; line-height: 1; }
+.sl-rate-stars button,
+.sl-rate-stars a {
+    padding: 0 .08rem; border: 0; background: none; font-size: 1rem; line-height: 1;
+    color: #8a8f98; text-decoration: none; cursor: pointer; transition: color .1s, transform .1s;
+}
+.sl-rate-stars .is-on { color: #f5a623; }
+.sl-rate-stars:hover button,
+.sl-rate-stars:hover a { color: #8a8f98; }
+.sl-rate-stars button:hover, .sl-rate-stars button:hover ~ button,
+.sl-rate-stars a:hover, .sl-rate-stars a:hover ~ a,
+.sl-rate-stars button:focus-visible, .sl-rate-stars button:focus-visible ~ button { color: #f5a623; }
+.sl-rate-stars button:hover, .sl-rate-stars a:hover { transform: scale(1.2); }
+.sl-rate-stars button:focus-visible { outline: 2px solid #f5a623; outline-offset: 1px; border-radius: 2px; }
+.sl-my-rating { color: #f5a623; }
+
 .low-stock {
     color: #dc3545;
     font-weight: 600;
@@ -61,6 +105,32 @@ img { max-width: 100%; }
 .sl-logo { font-family: var(--sl-head); font-size: 1.6rem; line-height: .8; font-style: italic; color: #111; }
 .sl-logo span { color: var(--sl-red); }
 .sl-logo small { display: block; font-style: normal; font-size: .55rem; letter-spacing: 3px; color: #555; }
+/* Logo with the "SY" sneaker monogram to the left of the wordmark */
+.sl-brand { display: inline-flex; align-items: center; gap: .55rem; }
+.sl-brand .sl-logo-mark { height: 1.5em; width: auto; aspect-ratio: 248 / 284; flex: none; overflow: visible; }
+.sl-logo .sl-logo-text { display: block; color: inherit; }
+
+/* Home page corner badge: the store name turns around a still "SY" monogram. Decorative, so clicks pass through. */
+.sl-spin-badge {
+    position: fixed; z-index: 1010;
+    right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom));
+    width: 84px; height: 84px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--sl-dark); color: #fff;
+    box-shadow: 0 0 0 2px var(--sl-red), 0 8px 24px rgba(0, 0, 0, .35);
+    pointer-events: none;
+}
+.sl-spin-badge-ring {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    animation: sl-badge-spin 14s linear infinite;
+}
+.sl-spin-badge-ring text { font: 13px var(--sl-head); letter-spacing: 1px; fill: #fff; }
+.sl-spin-badge-mark { position: relative; display: grid; place-items: center; height: 46%; }
+.sl-spin-badge .sl-logo-mark { height: 100%; width: auto; aspect-ratio: 248 / 284; overflow: visible; }
+@keyframes sl-badge-spin { to { transform: rotate(360deg); } }
+@media (min-width: 768px) { .sl-spin-badge { width: 112px; height: 112px; right: 24px; bottom: 24px; } }
+@media (prefers-reduced-motion: reduce) { .sl-spin-badge-ring { animation: none; } }
 .sl-nav .navbar-toggler { border: 0; padding: .5rem; min-width: var(--sl-tap); min-height: var(--sl-tap); }
 .sl-nav .navbar-toggler:focus { box-shadow: 0 0 0 2px var(--sl-red); }
 
@@ -807,6 +877,17 @@ img { max-width: 100%; }
 .sl-footer-logo { display: inline-block; font-size: 2rem; color: #fff; }
 .sl-footer-logo small { color: #9a9a9e; }
 .sl-footer-tagline { margin: 1rem 0 0; max-width: 34ch; line-height: 1.6; }
+.sl-footer-social { list-style: none; padding: 0; margin: 1.25rem 0 0; display: flex; flex-wrap: wrap; gap: .6rem; }
+.sl-footer-social a {
+    display: grid; place-items: center;
+    width: var(--sl-tap); height: var(--sl-tap);
+    border: 1px solid rgba(255, 255, 255, .22); border-radius: 50%;
+    color: #fff; font-size: 1.15rem; text-decoration: none;
+    transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
+}
+.sl-footer-social a:hover, .sl-footer-social a:focus-visible { background: var(--sl-red); border-color: var(--sl-red); color: #fff; transform: translateY(-2px); }
+.sl-footer-social a:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .sl-footer-social a { transition: none; } .sl-footer-social a:hover { transform: none; } }
 .sl-footer-title {
     font: 1.25rem/1 var(--sl-head);
     letter-spacing: 2px;
@@ -1114,7 +1195,7 @@ img { max-width: 100%; }
 .sl-admin-tabs a.is-active { background: var(--sl-admin-ink); border-color: var(--sl-admin-ink); color: var(--sl-admin-surface); }
 
 /* KPI tiles */
-.sl-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .9rem; margin-bottom: 1.25rem; }
+.sl-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .9rem; margin-bottom: 1.25rem; }
 .sl-kpi {
     position: relative;
     display: block;
@@ -1138,6 +1219,17 @@ a.sl-kpi:hover { box-shadow: 0 8px 20px rgba(0,0,0,.06); color: var(--sl-admin-i
 .sl-kpi-delta.is-flat { color: var(--sl-admin-ink-2); }
 .sl-kpi--alert .sl-kpi-value { color: var(--sl-admin-bad); }
 .sl-kpi--alert .sl-kpi-icon { color: var(--sl-admin-ghost-red); }
+.sl-kpi-dates { display: flex; align-items: flex-end; gap: .4rem; margin-top: .75rem; padding-top: .7rem; border-top: 1px solid var(--sl-admin-line); }
+.sl-kpi-dates label { flex: 1 1 0; min-width: 0; margin: 0; }
+.sl-kpi-dates span { display: block; font-size: .62rem; letter-spacing: 1px; text-transform: uppercase; color: var(--sl-admin-ink-2); font-weight: 600; margin-bottom: .15rem; }
+.sl-kpi-dates input {
+    width: 100%; min-width: 0; padding: .2rem .3rem; font-size: .74rem;
+    background: transparent; color: var(--sl-admin-ink);
+    border: 1px solid var(--sl-admin-line-strong); border-radius: 6px; color-scheme: light dark;
+}
+.sl-kpi-dates input:focus { outline: 2px solid var(--sl-red); outline-offset: 1px; }
+.sl-kpi-clear { flex: none; border: 0; background: none; padding: .2rem; color: var(--sl-admin-ink-2); line-height: 1; }
+.sl-kpi-clear:hover { color: var(--sl-red); }
 
 /* Panels */
 .sl-panel { background: var(--sl-admin-surface); border: 1px solid var(--sl-admin-line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }

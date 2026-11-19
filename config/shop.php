@@ -23,6 +23,16 @@ return [
         'Sunday' => null,
     ],
 
+    // Social media links in the footer (icon = Bootstrap Icons name).
+    // PLACEHOLDERS: replace each url with the store's real page, here or in .env (SHOP_FACEBOOK_URL etc.).
+    'social' => [
+        ['name' => 'Facebook', 'icon' => 'facebook', 'url' => env('SHOP_FACEBOOK_URL', 'https://www.facebook.com/')],
+        ['name' => 'Instagram', 'icon' => 'instagram', 'url' => env('SHOP_INSTAGRAM_URL', 'https://www.instagram.com/')],
+        ['name' => 'TikTok', 'icon' => 'tiktok', 'url' => env('SHOP_TIKTOK_URL', 'https://www.tiktok.com/')],
+        ['name' => 'WeChat', 'icon' => 'wechat', 'url' => env('SHOP_WECHAT_URL', 'https://www.wechat.com/')],
+        ['name' => 'Telegram', 'icon' => 'telegram', 'url' => env('SHOP_TELEGRAM_URL', 'https://t.me/')],
+    ],
+
     // Map pin for the Contact page (search text shown by Google Maps)
     'map_query' => env('SHOP_MAP_QUERY', 'Yangon, Myanmar'),
 

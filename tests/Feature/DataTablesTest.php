@@ -59,6 +59,7 @@ class DataTablesTest extends TestCase
         $this->assertDataTablePage($this->get(route('admin.products.index')), 1);
         $this->assertDataTablePage($this->get(route('admin.categories.index')), 1);
         $this->assertDataTablePage($this->get(route('admin.staff.index')), 2);
+        $this->assertDataTablePage($this->get(route('admin.feedback.index')), 1);
         $this->assertDataTablePage($this->get(route('admin.reports.index', ['type' => 'sales'])), 2);
         $this->assertDataTablePage($this->get(route('admin.reports.index', ['type' => 'inventory'])), 1);
         $this->assertDataTablePage($this->get(route('admin.reports.index', ['type' => 'customers'])), 1);

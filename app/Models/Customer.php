@@ -37,6 +37,11 @@ class Customer extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
     public function cartItems(): HasMany
     {
         return $this->hasMany(Cart::class);

@@ -298,4 +298,15 @@
 @endif
 
 @include('partials._promo_swap_script')
+
+{{-- Home page only: corner badge. The "SY" monogram stays still; the store name rotates around it. --}}
+<div class="sl-spin-badge" aria-hidden="true">
+    <svg class="sl-spin-badge-ring" viewBox="0 0 120 120" focusable="false">
+        <defs>
+            <path id="sl-spin-badge-path" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/>
+        </defs>
+        <text><textPath href="#sl-spin-badge-path" textLength="282" lengthAdjust="spacing">SLAYNA ★ SNEAKER STORE ★</textPath></text>
+    </svg>
+    <span class="sl-spin-badge-mark">@include('partials._logo_mark', ['id' => 'sl-mark-badge'])</span>
+</div>
 @endsection

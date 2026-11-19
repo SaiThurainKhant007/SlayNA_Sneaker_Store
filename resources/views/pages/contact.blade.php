@@ -103,6 +103,52 @@
     </section>
 </div>
 
+<section class="card dashboard-card p-3 p-md-4 mb-4" aria-labelledby="feedback-title">
+    <p class="sl-eyebrow mb-1"><i class="bi bi-chat-left-text-fill" aria-hidden="true"></i> Feedback</p>
+    <h2 id="feedback-title" class="sl-zigzag-title">Tell us how we're doing</h2>
+    @auth
+        @if (auth()->user()->isCustomer())
+            <p class="text-muted">Share your thoughts on our store and service. Only our team will see your feedback.</p>
+            <form method="POST" action="{{ route('contact.feedback') }}">
+                @csrf
+                <fieldset class="mb-3">
+                    <legend class="form-label mb-1">Your rating</legend>
+                    @include('partials._star_input', ['idPrefix' => 'feedback-rating', 'selected' => (int) old('rating')])
+                </fieldset>
+                <div class="mb-3">
+                    <label for="feedback-message" class="form-label">Your feedback</label>
+                    <textarea id="feedback-message" name="message" class="form-control" rows="4" maxlength="2000" required placeholder="What did we do well? What could we improve?">{{ old('message') }}</textarea>
+                </div>
+                <button type="submit" class="btn sl-btn-red">Send Feedback</button>
+            </form>
+        @else
+            <p class="text-muted mb-0">Feedback can be sent from customer accounts.</p>
+        @endif
+    @else
+        <p class="text-muted mb-0"><a href="{{ route('login') }}">Log in</a> to send us your feedback.</p>
+    @endauth
+</section>
+
+@if ($reviews->isNotEmpty())
+    <section class="mb-4" aria-labelledby="reviews-title">
+        <p class="sl-eyebrow mb-1"><i class="bi bi-star-fill" aria-hidden="true"></i> Customer Reviews</p>
+        <h2 id="reviews-title" class="sl-zigzag-title">What our customers say</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3 mt-1">
+            @foreach ($reviews as $review)
+                <div class="col">
+                    <div class="card dashboard-card p-3 h-100">
+                        <p class="rating-stars mb-2">
+                            <span aria-hidden="true">{{ str_repeat('★', (int) $review->rating) . str_repeat('☆', 5 - (int) $review->rating) }}</span>
+                            <span class="visually-hidden">{{ $review->rating }} out of 5</span>
+                        </p>
+                        <p class="mb-0">{{ Str::limit($review->comment, 220) }}</p>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </section>
+@endif
+
 <div class="sl-cta-box">
     <div>
         <h2>Already ordered?</h2>

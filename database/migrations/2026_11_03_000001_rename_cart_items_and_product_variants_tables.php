@@ -7,19 +7,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Class diagram names: Cart (was cart_items) and ProductSize (was product_variants),
-     * so the foreign keys pointing at a product size become product_size_id.
-     * Keys and indexes are dropped and re-added so their names follow the new tables.
-     */
+
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            $this->renameOnSqlite('product_variants', 'product_sizes', 'cart_items', 'carts', 'variant_id', 'product_size_id');
+
+            return;
+        }
+
         $this->dropKeys('cart_items', 'variant_id', 'product_variants', 'customer_id');
 
         Schema::rename('product_variants', 'product_sizes');
         Schema::rename('cart_items', 'carts');
 
-        // MariaDB 10.4 has no RENAME COLUMN, so CHANGE with the full definition
+      
         DB::statement('ALTER TABLE carts CHANGE variant_id product_size_id BIGINT UNSIGNED NOT NULL');
         DB::statement('ALTER TABLE order_items CHANGE variant_id product_size_id BIGINT UNSIGNED NOT NULL');
 
@@ -28,6 +30,12 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            $this->renameOnSqlite('product_sizes', 'product_variants', 'carts', 'cart_items', 'product_size_id', 'variant_id');
+
+            return;
+        }
+
         $this->dropKeys('carts', 'product_size_id', 'product_sizes', 'customer_id');
 
         Schema::rename('product_sizes', 'product_variants');
@@ -37,6 +45,16 @@ return new class extends Migration
         DB::statement('ALTER TABLE order_items CHANGE product_size_id variant_id BIGINT UNSIGNED NOT NULL');
 
         $this->addKeys('cart_items', 'variant_id', 'product_variants');
+    }
+
+    /** SQLite (the test database) carries keys and indexes through renames, so only the names change. */
+    private function renameOnSqlite(string $sizesFrom, string $sizesTo, string $cartFrom, string $cartTo, string $columnFrom, string $columnTo): void
+    {
+        Schema::rename($sizesFrom, $sizesTo);
+        Schema::rename($cartFrom, $cartTo);
+
+        Schema::table($cartTo, fn (Blueprint $table) => $table->renameColumn($columnFrom, $columnTo));
+        Schema::table('order_items', fn (Blueprint $table) => $table->renameColumn($columnFrom, $columnTo));
     }
 
     private function dropKeys(string $cart, string $sizeColumn, string $sizes, string $customerColumn): void

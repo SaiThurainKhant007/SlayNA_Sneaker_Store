@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
+use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
@@ -30,6 +31,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/brands', [PageController::class, 'brands'])->name('brands');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
+Route::post('/contact/feedback', [PageController::class, 'storeFeedback'])
+    ->middleware(['auth', 'role:customer'])
+    ->name('contact.feedback');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/new-arrivals', [ProductController::class, 'newArrivals'])->name('products.new');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
@@ -130,4 +134,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/reports/{report}.csv', [AdminReportController::class, 'export'])
         ->whereIn('report', ['sales', 'top-products', 'inventory', 'customers'])
         ->name('reports.export');
+
+    Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
+    Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
 });

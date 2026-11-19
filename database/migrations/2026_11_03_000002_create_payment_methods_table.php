@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /** Class diagram: PaymentMethod 1 — used for — 0..* Payment, replacing the payment_method enum. */
+   
     private const METHODS = [
         'kpay' => 'KPay',
         'ayapay' => 'AYA Pay',
@@ -33,8 +33,11 @@ return new class extends Migration
             $table->foreignId('payment_method_id')->nullable()->after('order_id')->constrained()->restrictOnDelete();
         });
 
-        DB::statement('UPDATE payments p JOIN payment_methods m ON m.code = p.payment_method SET p.payment_method_id = m.id');
-        DB::statement('ALTER TABLE payments MODIFY payment_method_id BIGINT UNSIGNED NOT NULL');
+        DB::statement('UPDATE payments SET payment_method_id = (SELECT id FROM payment_methods WHERE code = payments.payment_method)');
+
+        Schema::table('payments', function (Blueprint $table) {
+            $table->unsignedBigInteger('payment_method_id')->nullable(false)->change();
+        });
 
         Schema::table('payments', function (Blueprint $table) {
             $table->dropColumn('payment_method');
@@ -47,7 +50,7 @@ return new class extends Migration
             $table->enum('payment_method', array_keys(self::METHODS))->default('bank_transfer')->after('order_id');
         });
 
-        DB::statement('UPDATE payments p JOIN payment_methods m ON m.id = p.payment_method_id SET p.payment_method = m.code');
+        DB::statement('UPDATE payments SET payment_method = (SELECT code FROM payment_methods WHERE id = payments.payment_method_id)');
 
         Schema::table('payments', function (Blueprint $table) {
             $table->dropConstrainedForeignId('payment_method_id');

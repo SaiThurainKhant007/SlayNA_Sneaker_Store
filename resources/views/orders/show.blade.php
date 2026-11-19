@@ -61,6 +61,23 @@
                 <span>{{ $order->formattedTotal() }}</span>
             </div>
         </div>
+
+        @if ($order->order_status === 'completed')
+            <div class="card dashboard-card p-3 mt-3">
+                <h2 class="h6">Rate your items</h2>
+                {{-- One form per product, even if the order has it in two sizes --}}
+                @foreach ($order->items->map(fn ($item) => $item->variant->product)->unique('id') as $product)
+                    <div class="@unless ($loop->last) border-bottom pb-3 mb-3 @endunless">
+                        <p class="fw-semibold mb-2">{{ $product->name }}</p>
+                        @if ($reviewedProductIds->contains($product->id))
+                            <p class="small text-muted mb-0"><i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i> Thanks, you have reviewed this product.</p>
+                        @else
+                            @include('products._review_form', ['product' => $product])
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     <div class="col-lg-4">

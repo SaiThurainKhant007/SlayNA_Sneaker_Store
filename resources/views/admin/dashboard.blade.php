@@ -34,23 +34,40 @@
     <a href="{{ route('admin.reports.index') }}"><i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i> Reports</a>
 </nav>
 
-{{-- KPI tiles --}}
-<div class="sl-kpis">
+{{-- KPI tiles: each has its own start/end date; one GET form so changing one tile keeps the others' dates --}}
+<form class="sl-kpis" method="GET" action="{{ route('admin.dashboard') }}" data-kpi-form>
     @foreach ($tiles as $tile)
-        @php $delta = $kpis[$tile['key']]['delta']; @endphp
+        @php
+            $kpi = $kpis[$tile['key']];
+            $delta = $kpi['delta'];
+            $filtered = $kpi['from'] !== null;
+        @endphp
         <div class="sl-kpi">
             <i class="bi {{ $tile['icon'] }} sl-kpi-icon" aria-hidden="true"></i>
             <p class="sl-kpi-label">{{ $tile['label'] }}</p>
             <p class="sl-kpi-value" @isset($tile['title']) title="{{ $tile['title'] }}" @endisset>{{ $tile['value'] }}</p>
             @if ($delta === null)
-                <p class="sl-kpi-delta is-flat">No change vs last month</p>
+                <p class="sl-kpi-delta is-flat">No change vs {{ $kpi['compare'] }}</p>
             @elseif ($delta['pct'] === null)
-                <p class="sl-kpi-delta is-up"><i class="bi bi-arrow-up-short" aria-hidden="true"></i>{{ $tile['key'] === 'sales' ? $compact($delta['current']).' MMK' : number_format($delta['current']) }} new this month</p>
+                <p class="sl-kpi-delta is-up"><i class="bi bi-arrow-up-short" aria-hidden="true"></i>{{ $filtered ? 'Up from 0 in '.$kpi['compare'] : ($tile['key'] === 'sales' ? $compact($delta['current']).' MMK' : number_format($delta['current'])).' new this month' }}</p>
             @else
                 <p class="sl-kpi-delta {{ $delta['pct'] >= 0 ? 'is-up' : 'is-down' }}">
-                    <i class="bi {{ $delta['pct'] >= 0 ? 'bi-arrow-up-short' : 'bi-arrow-down-short' }}" aria-hidden="true"></i>{{ abs($delta['pct']) }}% vs last month
+                    <i class="bi {{ $delta['pct'] >= 0 ? 'bi-arrow-up-short' : 'bi-arrow-down-short' }}" aria-hidden="true"></i>{{ abs($delta['pct']) }}% vs {{ $kpi['compare'] }}
                 </p>
             @endif
+            <div class="sl-kpi-dates">
+                <label>
+                    <span>Start</span>
+                    <input type="date" name="{{ $tile['key'] }}[from]" value="{{ $kpi['from'] }}" max="{{ now()->toDateString() }}" aria-label="{{ $tile['label'] }} start date">
+                </label>
+                <label>
+                    <span>End</span>
+                    <input type="date" name="{{ $tile['key'] }}[to]" value="{{ $kpi['to'] }}" max="{{ now()->toDateString() }}" aria-label="{{ $tile['label'] }} end date">
+                </label>
+                @if ($filtered)
+                    <button type="button" class="sl-kpi-clear" data-kpi-clear title="Clear dates" aria-label="Clear {{ $tile['label'] }} dates"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                @endif
+            </div>
         </div>
     @endforeach
     <a class="sl-kpi sl-kpi--alert" href="{{ route('admin.reports.index', ['type' => 'inventory']) }}">
@@ -65,7 +82,7 @@
             @endif
         </p>
     </a>
-</div>
+</form>
 
 <div class="row g-3 g-xl-4">
     {{-- Sales chart --}}
@@ -184,6 +201,18 @@
 </div>
 
 <script>
+// KPI date filters: reload as soon as a date is picked; the x button clears that tile's dates
+(() => {
+    const form = document.querySelector('[data-kpi-form]');
+    if (!form) return;
+    form.addEventListener('change', (e) => { if (e.target.type === 'date') form.requestSubmit(); });
+    form.querySelectorAll('[data-kpi-clear]').forEach((btn) => btn.addEventListener('click', () => {
+        btn.closest('.sl-kpi-dates').querySelectorAll('input').forEach((i) => { i.value = ''; });
+        form.requestSubmit();
+    }));
+    // Leave empty dates out of the URL
+    form.addEventListener('submit', () => form.querySelectorAll('input[type=date]').forEach((i) => { i.disabled = !i.value; }));
+})();
 // Sales chart: one red series, bars rebuilt when the range changes; hover/focus shows a tooltip,
 // and the same numbers are in the "View as table" section.
 (() => {

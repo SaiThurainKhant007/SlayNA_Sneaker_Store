@@ -7,11 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Class diagram: Admin, Staff and Customer are separate classes, so each gets its own table
-     * with its own login. Rows keep their old users.id, so every existing foreign key value
-     * (orders.customer_id, orders.processed_by, payments.confirmed_by, ...) stays valid.
-     */
+
     public function up(): void
     {
         Schema::create('admins', function (Blueprint $table) {
@@ -37,14 +33,15 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Old staff table was only a profile hanging off users; rebuild it as a full account table
+       
         Schema::rename('staff', 'staff_profiles_old');
 
-        // Foreign key names are database-wide in MySQL; free them for the new staff table
-        Schema::table('staff_profiles_old', function (Blueprint $table) {
-            $table->dropForeign('staff_user_id_foreign');
-            $table->dropForeign('staff_managed_by_foreign');
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('staff_profiles_old', function (Blueprint $table) {
+                $table->dropForeign('staff_user_id_foreign');
+                $table->dropForeign('staff_managed_by_foreign');
+            });
+        }
 
         Schema::create('staff', function (Blueprint $table) {
             $table->id();

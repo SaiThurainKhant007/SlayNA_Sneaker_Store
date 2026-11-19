@@ -31,6 +31,11 @@ class OrderController extends Controller
             'order_status' => ['required', 'in:'.implode(',', Order::STATUSES)],
         ]);
 
+        // Reopening would keep the restocked items in stock, and cancelling again would add them a second time
+        if ($order->order_status === 'cancelled' && $validated['order_status'] !== 'cancelled') {
+            return back()->with('error', "Order #{$order->id} is cancelled and cannot be changed.");
+        }
+
         if ($validated['order_status'] === 'cancelled') {
             $order->cancel($request->user()->id);   // restocks the items once
         } else {

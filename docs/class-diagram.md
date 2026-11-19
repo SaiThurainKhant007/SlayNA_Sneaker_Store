@@ -31,6 +31,7 @@ After changing a class, update `docs/make_staruml_diagram.py` and run
 | Payment | `payments` |
 | PaymentMethod | `payment_methods` |
 | Review | `reviews` |
+| Feedback | `feedback` |
 | Product | `products` |
 | ProductSize | `product_sizes` |
 | ProductImage | `product_images` |
@@ -154,6 +155,13 @@ class Review {
   +text comment
   +datetime created_at
 }
+class Feedback {
+  +int id
+  +int customer_id
+  +int rating
+  +text message
+  +datetime created_at
+}
 class Product {
   +int id
   +string name
@@ -232,11 +240,12 @@ Customer "1" *-- "0..*" SavedCard : saves
 Customer "1" *-- "0..*" Cart : adds to
 Customer "1" -- "0..*" Order : places
 Customer "1" -- "0..*" Review : writes
+Customer "1" -- "0..*" Feedback : sends
 Staff "0..1" -- "0..*" Order : processes
 Staff "0..1" -- "0..*" Payment : confirms
 Order "1" *-- "1..*" OrderItem : contains
 Order "1" *-- "0..1" Payment : paid by
-Order "1" -- "0..*" Review : verifies
+Order "0..1" -- "0..*" Review : verifies
 PaymentMethod "1" -- "0..*" Payment : used for
 Brand "1" -- "0..*" Product : makes
 Category "1" -- "0..*" Product : groups

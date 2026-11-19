@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 60 330 420" role="img" aria-label="SlayNa Sneaker Store logo">
+  <title>SlayNa Sneaker Store</title>
+  <defs>
+    <!-- Interlocking serif "S" (black) and "Y" (red) monogram -->
+    <text id="S" x="196" y="352" text-anchor="middle" font-family="'Times New Roman', Georgia, serif" font-size="330">S</text>
+    <text id="Y" x="216" y="300" text-anchor="middle" font-family="'Times New Roman', Georgia, serif" font-size="330">Y</text>
+    <!-- where the Y's left arm passes over the S -->
+    <clipPath id="over"><rect x="120" y="100" width="100" height="90"/></clipPath>
+    <mask id="cutY" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="500">
+      <rect width="400" height="500" fill="#fff"/>
+      <use href="#S" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="round"/>
+    </mask>
+    <mask id="cutS" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="500">
+      <rect width="400" height="500" fill="#fff"/>
+      <use href="#Y" fill="#000" stroke="#000" stroke-width="16" stroke-linejoin="round" clip-path="url(#over)"/>
+    </mask>
+  </defs>
+
+  <use href="#Y" fill="#D7141A" mask="url(#cutY)"/>
+  <use href="#S" fill="#111" mask="url(#cutS)"/>
+  <use href="#Y" fill="#D7141A" clip-path="url(#over)"/>
+
+  <!-- Wordmark -->
+  <text x="207" y="420" text-anchor="middle" font-family="'Times New Roman', Georgia, serif"
+        font-size="54" letter-spacing="14"><tspan fill="#111">SLAY</tspan><tspan fill="#D7141A">NA</tspan></text>
+  <!-- Tagline -->
+  <text x="204" y="456" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="14" letter-spacing="8" fill="#111">SNEAKER STORE</text>
+</svg>

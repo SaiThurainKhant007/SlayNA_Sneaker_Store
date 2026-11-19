@@ -2,7 +2,7 @@
 
 An e-commerce website for **SlayNa Sneaker Store**, a licensed sneaker shop in Yangon, Myanmar.
 Customers can browse authentic sneakers by brand, category and size, order online and pay with
-KBZPay, AYA Pay, a saved card or cash on delivery. Staff run stock, orders and payment checks,
+KBZPay, AYA Pay or a saved card. Staff run stock, orders and payment checks,
 and admins manage the catalogue, promotions, staff accounts and sales reports.
 
 Built with **Laravel 13, PHP 8.3, MySQL and Bootstrap 5** as the Information Systems Project
@@ -15,7 +15,7 @@ Built with **Laravel 13, PHP 8.3, MySQL and Bootstrap 5** as the Information Sys
 - Browse products, see new arrivals, and search or filter by brand, category and size
 - View product details with a photo gallery, size availability, ratings and reviews
 - Add sizes to the cart, update quantities and check out with a shipping address
-- Pay by **KBZPay or AYA Pay** (scan the QR code, then upload the transfer screenshot), a saved card or cash on delivery
+- Pay by **KBZPay or AYA Pay** (scan the QR code, then upload the transfer screenshot) or a saved card
 - Track order and payment status in their order history
 - Write a star rating and review after an order containing the product is completed
 - Save Visa or Mastercard cards (only the last four digits are stored)

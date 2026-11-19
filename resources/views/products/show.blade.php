@@ -26,9 +26,6 @@
     <div class="col-md-7">
         <h1 class="h3">{{ $product->name }}</h1>
         <p class="text-muted">{{ $product->brand->name }} &middot; {{ $product->category->name }}</p>
-        <p>
-            @include('products._stars', ['rating' => $product->averageRating(), 'count' => $product->reviewCount()])
-        </p>
         <h2 class="h4">
             {{ $product->formattedPrice() }}
             @if ($product->livePromotion)
@@ -69,50 +66,6 @@
         @endif
     </div>
 </div>
-
-<hr class="my-4">
-
-<h2 class="h5">Customer Reviews</h2>
-
-@auth
-    @if (auth()->user()->isCustomer() && $alreadyReviewed)
-        <p class="small text-muted"><i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i> Thanks, you have reviewed this product.</p>
-    @elseif (auth()->user()->isCustomer())
-        <div class="card dashboard-card p-3 mb-3">
-            <h3 class="h6">Write a Review</h3>
-            <form method="POST" action="{{ route('products.reviews.store', $product) }}">
-                @csrf
-                <div class="mb-2">
-                    <label class="form-label small">Rating</label>
-                    <select name="rating" class="form-select form-select-sm" style="width:150px" required>
-                        <option value="5">5 - Excellent</option>
-                        <option value="4">4 - Good</option>
-                        <option value="3">3 - Average</option>
-                        <option value="2">2 - Poor</option>
-                        <option value="1">1 - Bad</option>
-                    </select>
-                </div>
-                <div class="mb-2">
-                    <textarea name="comment" class="form-control form-control-sm" rows="2" placeholder="Share your experience with this product..."></textarea>
-                </div>
-                <button type="submit" class="btn btn-dark btn-sm">Submit Review</button>
-            </form>
-        </div>
-    @endif
-@endauth
-
-@forelse ($product->reviews as $review)
-    <div class="border-bottom py-2">
-        <p class="rating-stars mb-0 small">
-            {{ str_repeat('★', (int) $review->rating) . str_repeat('☆', 5 - (int) $review->rating) }}
-            <strong class="text-body">{{ $review->customer->name }}</strong>
-            <span class="text-muted">&middot; {{ $review->created_at->format('d M Y') }}</span>
-        </p>
-        <p class="mb-0">{!! nl2br(e($review->comment)) !!}</p>
-    </div>
-@empty
-    <p class="text-muted">No reviews yet for this product.</p>
-@endforelse
 
 @if ($related->isNotEmpty())
     <section class="mt-5" aria-labelledby="related-title">

@@ -27,7 +27,9 @@ class OrderController extends Controller
 
         $order->load(['items.variant.product', 'items.variant.size', 'payment']);
 
-        return view('orders.show', compact('order'));
+        $reviewedProductIds = $request->user()->reviews()->pluck('product_id');
+
+        return view('orders.show', compact('order', 'reviewedProductIds'));
     }
 
     /** Customers can cancel their own order while it is still pending; the items go back in stock. */

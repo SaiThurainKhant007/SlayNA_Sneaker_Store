@@ -150,7 +150,7 @@
 									"top": 373,
 									"width": 210,
 									"height": 13,
-									"text": "Product details & reviews ( /products/{id} )"
+									"text": "Product details ( /products/{id} )"
 								}
 							],
 							"font": "Arial;13;0",
@@ -294,15 +294,15 @@
 									"top": 773,
 									"width": 210,
 									"height": 13,
-									"text": "Contact ( /contact )"
+									"text": "Contact, reviews & feedback ( /contact )"
 								}
 							],
 							"font": "Arial;13;0",
 							"parentStyle": false,
 							"left": 570,
-							"top": 755,
+							"top": 750,
 							"width": 220,
-							"height": 50,
+							"height": 60,
 							"wordWrap": true,
 							"nameLabel": {
 								"$ref": "U0xBWUZDAAAAAAAb"
@@ -654,7 +654,7 @@
 									"top": 773,
 									"width": 230,
 									"height": 13,
-									"text": "Order details, track & cancel ( /account/orders/{id} )"
+									"text": "Order details, track, cancel & review ( /account/orders/{id} )"
 								}
 							],
 							"font": "Arial;13;0",
@@ -1835,7 +1835,7 @@
 					"_parent": {
 						"$ref": "U0xBWUZDAAAAAAAC"
 					},
-					"name": "Product details & reviews ( /products/{id} )",
+					"name": "Product details ( /products/{id} )",
 					"ownedElements": []
 				},
 				{
@@ -1885,7 +1885,7 @@
 					"_parent": {
 						"$ref": "U0xBWUZDAAAAAAAC"
 					},
-					"name": "Contact ( /contact )",
+					"name": "Contact, reviews & feedback ( /contact )",
 					"ownedElements": []
 				},
 				{
@@ -2110,7 +2110,7 @@
 					"_parent": {
 						"$ref": "U0xBWUZDAAAAAAAC"
 					},
-					"name": "Order details, track & cancel ( /account/orders/{id} )",
+					"name": "Order details, track, cancel & review ( /account/orders/{id} )",
 					"ownedElements": []
 				},
 				{

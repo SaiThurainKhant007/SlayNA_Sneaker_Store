@@ -40,7 +40,7 @@ class CheckoutController extends Controller
         // Mobile wallet transfers need a screenshot so staff can match the payment
         $validated = $request->validate([
             'shipping_address' => ['required', 'string', 'max:255'],
-            'payment_method' => ['required', 'in:'.implode(',', [...$wallets, 'cod', 'saved_card'])],
+            'payment_method' => ['required', 'in:'.implode(',', [...$wallets, 'saved_card'])],
             'proof_image' => ['required_if:payment_method,'.implode(',', $wallets), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'transaction_ref' => ['nullable', 'string', 'max:40'],
         ], [

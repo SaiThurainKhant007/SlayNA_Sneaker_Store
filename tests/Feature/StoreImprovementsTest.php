@@ -158,7 +158,28 @@ class StoreImprovementsTest extends TestCase
         $this->post($url, ['rating' => 1, 'comment' => 'Again'])->assertSessionHasErrors('review');
 
         $this->assertDatabaseCount('reviews', 1);
-        $this->get("/products/{$variant->product_id}")->assertSee('you have reviewed this product')->assertDontSee('Submit Review');
+    }
+
+    public function test_completed_order_page_has_a_review_form_until_the_product_is_reviewed(): void
+    {
+        $customer = Customer::factory()->create();
+        [$order, $variant] = $this->orderFor($customer, 1, 'completed');
+        $page = route('account.orders.show', $order);
+
+        $this->actingAs($customer)->get($page)->assertOk()->assertSee('Rate your items')->assertSee('Submit Review');
+
+        $this->from($page)->post("/products/{$variant->product_id}/reviews", ['rating' => 5])->assertRedirect($page);
+
+        $this->get($page)->assertSee('you have reviewed this product')->assertDontSee('Submit Review');
+    }
+
+    public function test_only_completed_orders_show_the_review_form(): void
+    {
+        $customer = Customer::factory()->create();
+        [$order] = $this->orderFor($customer, 1, 'shipped');
+
+        $this->actingAs($customer)->get(route('account.orders.show', $order))
+            ->assertOk()->assertDontSee('Rate your items')->assertDontSee('Submit Review');
     }
 
     // ---- Admin reports ----

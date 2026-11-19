@@ -6,9 +6,7 @@
         <div class="card-body d-flex flex-column">
             <h3 class="h6">{{ $product->name }}</h3>
             <p class="text-muted small mb-1">{{ $product->brand->name }} &middot; {{ $product->category->name }}</p>
-            <p class="small mb-1">
-                @include('products._stars', ['rating' => $product->averageRating(), 'count' => $product->reviewCount()])
-            </p>
+            @include('products._card_rating', ['product' => $product])
             <p class="fw-bold mb-1">
                 {{ $product->formattedPrice() }}
                 @if ($product->livePromotion)

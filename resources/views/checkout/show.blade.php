@@ -27,11 +27,6 @@
                             <span><strong>{{ $wallet['short'] }}</strong><small>Scan QR or pay to phone</small></span>
                         </label>
                     @endforeach
-                    <label class="sl-pay-option">
-                        <input type="radio" name="payment_method" value="cod" @checked($selected === 'cod')>
-                        <i class="bi bi-cash-coin" aria-hidden="true"></i>
-                        <span><strong>Cash on Delivery</strong><small>Pay when it arrives</small></span>
-                    </label>
                     @if ($savedCards->isNotEmpty())
                         <label class="sl-pay-option">
                             <input type="radio" name="payment_method" value="saved_card" @checked($selected === 'saved_card')>

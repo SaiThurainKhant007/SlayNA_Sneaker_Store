@@ -90,16 +90,9 @@ class ProductController extends Controller
         return view('products.new', compact('products'));
     }
 
-    public function show(Request $request, Product $product): View
+    public function show(Product $product): View
     {
-        $product->load([
-            'brand',
-            'category',
-            'variants.size',
-            'images',
-            'reviews' => fn ($q) => $q->latest(),
-            'reviews.customer',
-        ]);
+        $product->load(['brand', 'category', 'variants.size', 'images']);
 
         // "You may also like": same category or brand, items in stock first
         $related = Product::with(['brand', 'category', 'reviews', 'variants', 'livePromotion'])
@@ -112,10 +105,7 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
-        $alreadyReviewed = $request->user()
-            && $product->reviews->contains('customer_id', $request->user()->id);
-
-        return view('products.show', compact('product', 'related', 'alreadyReviewed'));
+        return view('products.show', compact('product', 'related'));
     }
 
     /** UC_02 Review & Rating Management: customer submits a review. */
@@ -136,23 +126,19 @@ class ProductController extends Controller
             return back()->withErrors(['review' => 'You have already reviewed this product.']);
         }
 
-        // Precondition: customer must have a completed order containing this product
+        // Any customer may review; link the delivered order when there is one
         $order = $user->orders()
             ->where('order_status', 'completed')
             ->whereHas('items.variant', fn ($q) => $q->where('product_id', $product->id))
             ->first();
 
-        if (! $order) {
-            return back()->withErrors(['review' => 'You can only review products from a completed order.']);
-        }
-
         $product->reviews()->create([
             'customer_id' => $user->id,
-            'order_id' => $order->id,
+            'order_id' => $order?->id,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'] ?? null,
         ]);
 
-        return redirect()->route('products.show', $product)->with('success', 'Thank you! Your review has been posted.');
+        return back()->with('success', 'Thank you! Your review has been posted.');
     }
 }

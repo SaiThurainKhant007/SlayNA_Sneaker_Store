@@ -78,7 +78,7 @@
     const IMAGE_SLIDE_TIME = 6000; // slide time once we fall back to thumbnails
 
     let current = 0, player = null, ready = false, wanted = !reduceMotion, soundOn = false, inView = false;
-    let blocked = false, watchdog = null, progressTimer = null, imageTimer = null, startX = null;
+    let blocked = false, watchdog = null, progressTimer = null, imageTimer = null, startX = null, failures = 0;
 
     const countEl = root.querySelector('.sl-videos-count');
     const nowEl = root.querySelector('.sl-videos-now-title');
@@ -132,6 +132,7 @@
                 onReady: () => { ready = true; if (wanted) play(); },
                 onStateChange: e => {
                     if (e.data === YT.PlayerState.PLAYING) {
+                        failures = 0;
                         clearTimeout(watchdog);
                         setState('playing');
                         clearInterval(progressTimer);
@@ -142,7 +143,12 @@
                     }
                     if (e.data === YT.PlayerState.ENDED) go(current + 1);
                 },
-                onError: () => { clearTimeout(watchdog); setTimeout(() => go(current + 1), 1200); },
+                // Skip one bad video; if every video fails in a row, YouTube is refusing this visitor (e.g. the "not a bot" check)
+                onError: () => {
+                    clearTimeout(watchdog);
+                    if (++failures >= ids.length) fallBack();
+                    else setTimeout(() => go(current + 1), 1200);
+                },
             },
         });
         // If the player never becomes ready (blocked before it loads), fall back as well

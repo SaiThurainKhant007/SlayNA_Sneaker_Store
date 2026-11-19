@@ -7,10 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Staff profile (class diagram: Admin 1 — manages — 0..* Staff).
-     * Login details stay in users; this holds what only staff have, plus the managing admin.
-     */
+  
     public function up(): void
     {
         Schema::create('staff', function (Blueprint $table) {
@@ -22,7 +19,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Give existing staff accounts a profile, managed by the first admin
+      
         $adminId = DB::table('users')->where('role', 'admin')->orderBy('id')->value('id');
 
         DB::table('users')->where('role', 'staff')->orderBy('id')->get(['id', 'created_at'])

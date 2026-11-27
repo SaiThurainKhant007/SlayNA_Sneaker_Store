@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Guarded(['id'])]
 class ProductSize extends Model
@@ -27,6 +28,17 @@ class ProductSize extends Model
     public function scopeLowStock(Builder $query): Builder
     {
         return $query->whereHas('product', fn ($q) => $q->whereColumn('product_sizes.stock_quantity', '<=', 'products.low_stock_threshold'));
+    }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class, 'product_size_id');
+    }
+
+    /** "EU 42" or, for a colour's own stock, "EU 42 · Black with White". */
+    public function label(): string
+    {
+        return 'EU '.$this->size->label.($this->color ? ' · '.$this->color : '');
     }
 
     public function isLowStock(): bool

@@ -26,7 +26,9 @@ class ProductController extends Controller
 
     public function index(): View
     {
+        // Limited Editions are managed in Manage Promotions, not here
         $products = Product::with(['brand', 'category', 'variants'])
+            ->where('status', '!=', 'limited')
             ->latest('id')
             ->get();
 
@@ -40,6 +42,8 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
+        abort_if($product->status === 'limited', 404);   // edited in Manage Promotions
+
         return $this->form($product);
     }
 
@@ -51,7 +55,10 @@ class ProductController extends Controller
 
         $existingStock = [];
         if ($product) {
-            $existingStock = $product->variants()->pluck('stock_quantity', 'size_id')->toArray();
+            // [colour => [size_id => stock]]; '' = one stock for the whole product (no colour names)
+            foreach ($product->variants()->get() as $variant) {
+                $existingStock[$variant->color ?? ''][$variant->size_id] = $variant->stock_quantity;
+            }
             $product->load('images');
         }
         $maxPhotos = self::MAX_PHOTOS;
@@ -66,6 +73,8 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product): RedirectResponse
     {
+        abort_if($product->status === 'limited', 404);   // edited in Manage Promotions
+
         return $this->save($request, $product);
     }
 
@@ -85,9 +94,32 @@ class ProductController extends Controller
             'remove_photos' => ['nullable', 'array'],
             'remove_photos.*' => ['integer'],
             'main_photo' => ['nullable', 'string', 'max:30'],   // "main", "existing:{id}" or "new:{index}"
+            'photo_labels' => ['nullable', 'array'],            // colour/type name per photo, keyed like main_photo
+            'photo_labels.*' => ['nullable', 'string', 'max:60'],
             'stock' => ['nullable', 'array'],
-            'stock.*' => ['nullable', 'integer', 'min:0'],
+            // Stock grid: stock[row][size_id] with the row's colour in stock_color[row]; without
+            // stock_color the old one-row form stock[size_id] is accepted (one stock for the product)
+            ...($request->has('stock_color') ? [
+                'stock_color' => ['array'],
+                'stock_color.*' => ['nullable', 'string', 'max:60'],
+                'stock.*' => ['nullable', 'array'],
+                'stock.*.*' => ['nullable', 'integer', 'min:0'],
+            ] : [
+                'stock.*' => ['nullable', 'integer', 'min:0'],
+            ]),
         ]);
+
+        // One stock row per colour (blank colour = the whole product), first spelling of a colour wins
+        $stockRows = [];
+        if ($request->has('stock_color')) {
+            foreach ($request->input('stock_color', []) as $row => $color) {
+                $color = trim((string) $color) !== '' ? trim((string) $color) : null;
+                $stockRows[mb_strtolower($color ?? '')] ??= [$color, (array) $request->input("stock.{$row}", [])];
+            }
+        }
+        if (! $stockRows) {
+            $stockRows[''] = [null, (array) $request->input('stock', [])];
+        }
 
         // Current photos, keyed the way the form refers to them (only this product's photos)
         $current = collect();
@@ -120,10 +152,17 @@ class ProductController extends Controller
         $mainKey = $validated['main_photo'] ?? null;
         $mainKey = $mainKey !== null && $kept->has($mainKey) ? $mainKey : $kept->keys()->first();
         $imagePath = $mainKey ? $kept[$mainKey] : self::NO_IMAGE;
-        $extraPaths = $kept->except([$mainKey])->values()->all();
         $filesToDelete = $current->only($removed->all())->values()->all();
 
-        DB::transaction(function () use (&$product, $validated, $request, $imagePath, $extraPaths) {
+        // Colour/type name typed under each photo (blank = no name)
+        $labels = $validated['photo_labels'] ?? [];
+        $labelFor = fn ($key) => ($name = trim((string) ($labels[$key] ?? ''))) !== '' ? $name : null;
+        $imageLabel = $mainKey ? $labelFor($mainKey) : null;
+        $extraPhotos = $kept->except([$mainKey])
+            ->map(fn ($path, $key) => ['image_path' => $path, 'label' => $labelFor($key)])
+            ->values()->all();
+
+        DB::transaction(function () use (&$product, $validated, $imagePath, $imageLabel, $extraPhotos, $stockRows) {
             $data = [
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
@@ -131,6 +170,7 @@ class ProductController extends Controller
                 'brand_id' => $validated['brand_id'],
                 'category_id' => $validated['category_id'],
                 'image_path' => $imagePath,
+                'image_label' => $imageLabel,
                 'low_stock_threshold' => $validated['low_stock_threshold'] ?? 5,
                 'status' => $validated['status'],
             ];
@@ -143,18 +183,26 @@ class ProductController extends Controller
 
             // Extra photos = every photo except the main one, in order
             $product->images()->delete();
-            foreach ($extraPaths as $i => $path) {
-                $product->images()->create(['image_path' => $path, 'sort_order' => $i + 1]);
+            foreach ($extraPhotos as $i => $photo) {
+                $product->images()->create($photo + ['sort_order' => $i + 1]);
             }
 
-            // Upsert per-size stock (UC_03 / UC_07)
-            foreach (Size::all() as $size) {
-                $qty = max(0, (int) ($request->input("stock.{$size->id}", 0)));
-                $product->variants()->updateOrCreate(
-                    ['size_id' => $size->id],
-                    ['stock_quantity' => $qty]
-                );
+            // Upsert stock per colour and size (UC_03 / UC_07)
+            $kept = [];
+            $sizes = Size::all();
+            foreach ($stockRows as [$color, $quantities]) {
+                foreach ($sizes as $size) {
+                    $kept[] = $product->variants()->updateOrCreate(
+                        ['size_id' => $size->id, 'color' => $color],
+                        ['stock_quantity' => max(0, (int) ($quantities[$size->id] ?? 0))]
+                    )->id;
+                }
             }
+
+            // Colours no longer listed: delete their stock rows, except ones past orders point to (kept at 0)
+            $gone = $product->variants()->whereNotIn('id', $kept);
+            (clone $gone)->whereDoesntHave('orderItems')->delete();
+            $gone->update(['stock_quantity' => 0]);
         });
 
         // Files go only after the database changes are saved

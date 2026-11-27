@@ -12,6 +12,10 @@ use App\Models\ProductSize;
 use App\Models\Size;
 use App\Models\Staff;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Support\DropAlertList;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /** Order tracking & self-cancel, shop pagination & price filter, related products, one review each, CSV reports, SEO tags, error pages. */
@@ -205,6 +209,59 @@ class StoreImprovementsTest extends TestCase
         $this->get('/admin/reports')->assertSee('Download CSV');
     }
 
+    // ---- Footer: "Get the Drop" email signup ----
+
+    public function test_anyone_can_sign_up_for_drop_alerts_from_the_footer(): void
+    {
+        Storage::fake('local');   // the list is a JSON file, not a database table
+        $emails = fn () => app(DropAlertList::class)->all()->pluck('email')->all();
+
+        $this->get('/about')->assertOk()
+            ->assertSee('Get the Drop')
+            ->assertSee('id="drop-email"', false);
+
+        // Saved once, in lower case; signing up again is fine and says so
+        $this->from('/about')->post('/subscribe', ['email' => '  Fan@Example.com '])
+            ->assertRedirect('/about#drop-alerts')
+            ->assertSessionHas('subscribed', "You're on the list! We'll email you when new pairs drop.");
+        $this->from('/about')->post('/subscribe', ['email' => 'fan@example.com'])
+            ->assertSessionHas('subscribed', "You're already on the list. We'll email you when new pairs drop.");
+        $this->assertSame(['fan@example.com'], $emails());
+        Storage::disk('local')->assertExists('drop-alerts.json');
+        $this->assertFalse(Schema::hasTable('subscribers'));   // no extra table / class
+
+        // The thank-you message replaces the form
+        $this->withSession(['subscribed' => "You're on the list!"])->get('/about')
+            ->assertSee("You're on the list!")
+            ->assertDontSee('id="drop-email"', false);
+
+        // Bad addresses are rejected with a message under the field
+        $this->from('/about')->post('/subscribe', ['email' => 'not-an-email'])
+            ->assertSessionHasErrorsIn('subscribe', ['email']);
+        $this->assertSame(['fan@example.com'], $emails());
+    }
+
+    public function test_admin_sees_exports_and_removes_drop_alert_subscribers(): void
+    {
+        Storage::fake('local');
+        app(DropAlertList::class)->add('=cmd@example.com');
+        app(DropAlertList::class)->add('keep@example.com');
+
+        $this->get('/admin/subscribers')->assertRedirect();   // not for guests
+
+        $this->actingAs(Admin::factory()->create(), 'admin');
+        $this->get('/admin/subscribers')->assertOk()->assertSee('=cmd@example.com')->assertSee('Download CSV');
+
+        $csv = $this->get('/admin/reports/subscribers.csv')->assertOk()->streamedContent();
+        $this->assertStringContainsString("'=cmd@example.com", $csv);   // spreadsheet formulas are neutralised
+
+        $this->delete(route('admin.subscribers.destroy'), ['email' => '=cmd@example.com'])->assertRedirect(route('admin.subscribers.index'));
+        $this->assertSame(['keep@example.com'], app(DropAlertList::class)->all()->pluck('email')->all());
+
+        $this->actingAs(Staff::factory()->create(), 'staff');
+        $this->get('/admin/subscribers')->assertForbidden();
+    }
+
     public function test_only_admins_can_download_reports(): void
     {
         $staff = Staff::factory()->create();
@@ -218,5 +275,34 @@ class StoreImprovementsTest extends TestCase
     {
         $this->get('/products/999999')->assertNotFound()->assertSee('Page not found')->assertSee('Browse sneakers');
         $this->get('/no-such-page')->assertNotFound()->assertSee('SLAY');
+    }
+
+    public function test_home_page_shows_the_sneaker_showcase_for_listed_products_only(): void
+    {
+        $runner = $this->product('Runner', 1500000, Brand::create(['name' => 'Balenciaga']), Category::firstOrCreate(['name' => 'Lifestyle']));
+        $this->product('9060', 210000)->update(['status' => 'discontinued']);
+        ProductSize::create(['product_id' => $runner->id, 'size_id' => Size::firstOrCreate(['label' => '42'])->id, 'stock_quantity' => 10]);
+        ProductSize::create(['product_id' => $runner->id, 'size_id' => Size::firstOrCreate(['label' => '38'])->id, 'stock_quantity' => 0]);
+
+        $html = $this->get('/')->assertOk()
+            ->assertSee('Spin the Wheel')
+            ->assertSee('img/showcase/balenciaga-runner.png')
+            ->assertSee(route('products.show', $runner))
+            ->assertSee('data-orbit-item', false)
+            ->assertSee('Spin for me')
+            ->assertDontSee('img/showcase/new-balance-9060.png')   // discontinued product is skipped
+            ->getContent();
+
+        // Under the wheel: just the front sneaker's name and price (no rating, sizes or button)
+        $caption = Str::between($html, 'data-orbit-caption', '</p>');
+        $this->assertStringContainsString('Runner', $caption);
+        $this->assertStringContainsString('1,500,000 MMK', $caption);
+        $this->assertStringNotContainsString('review', $caption);
+        $this->assertStringNotContainsString('View Product', $caption);
+        $this->assertStringContainsString('data-name="Runner" data-price="1,500,000 MMK"', $html);
+
+        // No listed products at all: the section is left out
+        $runner->update(['status' => 'discontinued']);
+        $this->get('/')->assertOk()->assertDontSee('Spin the Wheel');
     }
 }

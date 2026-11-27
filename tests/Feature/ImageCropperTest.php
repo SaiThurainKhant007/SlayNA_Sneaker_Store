@@ -41,7 +41,13 @@ class ImageCropperTest extends TestCase
     {
         $brand = Brand::create(['name' => 'Puma']);
         $product = Product::create(['name' => 'Suede', 'price' => 98000, 'brand_id' => $brand->id, 'category_id' => Category::create(['name' => 'Lifestyle'])->id]);
-        Promotion::create(['title' => 'Sale', 'product_id' => $product->id, 'discount_percent' => 10, 'is_active' => true]);
+        Promotion::create([
+            'title' => 'Sale',
+            'brand_id' => $product->brand_id,
+            'original_price' => $product->price,
+            'discount_percent' => 10,
+            'is_active' => true,
+        ]);
         GalleryImage::create(['image_path' => 'gallery/x.jpg', 'sort_order' => 1, 'is_active' => true]);
 
         $this->actingAs(Admin::factory()->create());

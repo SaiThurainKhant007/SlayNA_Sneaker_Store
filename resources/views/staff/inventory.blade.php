@@ -18,7 +18,7 @@
             @foreach ($variants as $variant)
                 <tr>
                     <td><a href="{{ route('products.show', $variant->product) }}" target="_blank">{{ $variant->product->name }}</a></td>
-                    <td data-order="{{ (float) $variant->size->label }}">EU {{ $variant->size->label }}</td>
+                    <td data-order="{{ (float) $variant->size->label }}">{{ $variant->label() }}</td>
                     <td class="{{ $variant->isLowStock() ? 'low-stock' : '' }}">{{ $variant->stock_quantity }}</td>
                     <td>
                         <form method="POST" action="{{ route('staff.inventory.update', $variant) }}" class="d-flex gap-1">

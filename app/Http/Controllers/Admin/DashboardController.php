@@ -87,7 +87,8 @@ class DashboardController extends Controller
             ->groupBy('product_id')
             ->map(fn ($variants) => [
                 'product' => $variants->first()->product,
-                'sizes' => $variants->sortBy(fn ($v) => (float) $v->size->label)->pluck('size.label')->all(),
+                'sizes' => $variants->sortBy(fn ($v) => (float) $v->size->label)
+                    ->map(fn ($v) => $v->size->label.($v->color ? ' ('.$v->color.')' : ''))->values()->all(),
                 'min' => $variants->min('stock_quantity'),
             ])
             ->sortBy('min')

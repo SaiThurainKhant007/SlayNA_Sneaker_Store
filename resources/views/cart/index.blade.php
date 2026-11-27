@@ -29,7 +29,7 @@
                                 <a href="{{ route('products.show', $item->variant->product) }}">{{ $item->variant->product->name }}</a>
                             </div>
                         </td>
-                        <td data-order="{{ (float) $item->variant->size->label }}">EU {{ $item->variant->size->label }}</td>
+                        <td data-order="{{ (float) $item->variant->size->label }}">{{ $item->variant->label() }}</td>
                         <td data-order="{{ (float) $item->variant->product->effectivePrice() }}">
                             {{ $item->variant->product->formattedPrice() }}
                             @if ($item->variant->product->livePromotion)

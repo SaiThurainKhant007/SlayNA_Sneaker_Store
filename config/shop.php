@@ -44,4 +44,19 @@ return [
         ['id' => 'freRkr00otY', 'brand' => 'Nike', 'title' => 'Just Do It', 'credit' => 'Spec ad by Tyler Vandervort (VV Media)'],
         ['id' => '7V07PFYDonM', 'brand' => 'New Balance', 'title' => 'We Got Now', 'credit' => 'New Balance · 2026'],
     ],
+
+    // Sneaker Showcase on the home page (below Newest Arrivals): a cut-out photo in public/img/showcase,
+    // linked to the active product with this exact name. Entries whose product is missing or inactive are skipped.
+    'showcase' => [
+        ['image' => 'img/showcase/skechers-dlites.png', 'product' => "D'Lites"],
+        ['image' => 'img/showcase/nike-air-force-1-07.png', 'product' => "Air Force 1 '07"],
+        ['image' => 'img/showcase/converse-chuck-taylor-hi.png', 'product' => 'Chuck Taylor All Star Hi'],
+        ['image' => 'img/showcase/puma-speedcat-og.png', 'product' => 'Speedcat OG'],
+        ['image' => 'img/showcase/new-balance-9060.png', 'product' => '9060'],
+        ['image' => 'img/showcase/balenciaga-runner.png', 'product' => 'Runner'],
+        ['image' => 'img/showcase/converse-chuck-70-shenron.png', 'product' => 'Chuck 70 Hi Shenron'],
+        ['image' => 'img/showcase/converse-chuck-taylor-vegeta.png', 'product' => 'Chuck Taylor All Star Hi Vegeta'],
+        ['image' => 'img/showcase/jordan-air-jordan-3-retro.png', 'product' => 'Air Jordan 3 Retro'],
+        ['image' => 'img/showcase/nike-air-monarch-iv.png', 'product' => 'Air Monarch IV'],
+    ],
 ];

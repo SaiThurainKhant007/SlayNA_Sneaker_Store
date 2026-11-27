@@ -4,7 +4,7 @@
     <ul class="list-unstyled mb-0 mt-1">
         @foreach ($order->items as $item)
             <li class="mb-1 @if ($item->isPromotional()) sl-staff-promo-line @endif">
-                {{ $item->variant->product->name }} (EU {{ $item->variant->size->label }}) &times; {{ $item->quantity }}
+                {{ $item->variant->product->name }} ({{ $item->variant->label() }}) &times; {{ $item->quantity }}
                 &mdash; {{ number_format((float) $item->unit_price, 0) }} MMK
                 @if ($item->isPromotional())
                     <br>

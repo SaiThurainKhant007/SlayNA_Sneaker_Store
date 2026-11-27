@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Size;
 use Illuminate\Http\RedirectResponse;
@@ -90,8 +91,13 @@ class ProductController extends Controller
         return view('products.new', compact('products'));
     }
 
-    public function show(Product $product): View
+    public function show(Product $product): View|RedirectResponse
     {
+        // A Limited Edition has no product page: it is shown and sold on the home page
+        if ($product->status === 'limited') {
+            return redirect()->to(route('home').'#limited-title');
+        }
+
         $product->load(['brand', 'category', 'variants.size', 'images']);
 
         // "You may also like": same category or brand, items in stock first
@@ -105,7 +111,12 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
-        return view('products.show', compact('product', 'related'));
+        // "Going fast" note: real pairs sold in the last 30 days (cancelled orders don't count)
+        $soldRecently = (int) OrderItem::whereIn('product_size_id', $product->variants->pluck('id'))
+            ->whereHas('order', fn ($q) => $q->where('order_status', '!=', 'cancelled')->where('created_at', '>=', now()->subDays(30)))
+            ->sum('quantity');
+
+        return view('products.show', compact('product', 'related', 'soldRecently'));
     }
 
     /** UC_02 Review & Rating Management: customer submits a review. */

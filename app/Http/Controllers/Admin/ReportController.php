@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductSize;
+use App\Support\DropAlertList;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -36,10 +37,12 @@ class ReportController extends Controller
                 ->map(fn ($r) => [$r->day, $r->order_count, (float) $r->total_sales])],
             'top-products' => [['Product', 'Units Sold', 'Revenue (MMK)'], $this->topProducts()
                 ->map(fn ($r) => [$r->product_name, $r->units_sold, (float) $r->revenue])],
-            'inventory' => [['Product', 'Size (EU)', 'Stock', 'Low Stock Threshold'], $this->inventoryReport()
-                ->map(fn ($v) => [$v->product->name, $v->size->label, $v->stock_quantity, $v->product->low_stock_threshold])],
+            'inventory' => [['Product', 'Colour', 'Size (EU)', 'Stock', 'Low Stock Threshold'], $this->inventoryReport()
+                ->map(fn ($v) => [$v->product->name, $v->color ?? '', $v->size->label, $v->stock_quantity, $v->product->low_stock_threshold])],
             'customers' => [['Customer', 'Email', 'Orders', 'Total Spent (MMK)'], $this->customerReport()
                 ->map(fn ($c) => [$c->name, $c->email, $c->orders_count, (float) $c->total_spent])],
+            'subscribers' => [['Email', 'Signed Up'], app(DropAlertList::class)->all()
+                ->map(fn ($s) => [$s['email'], substr($s['signed_up'], 0, 16)])],
             default => abort(404),
         };
 

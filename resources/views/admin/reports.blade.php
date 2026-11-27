@@ -53,7 +53,7 @@
                 @foreach ($inventoryReport as $variant)
                     <tr>
                         <td>{{ $variant->product->name }}</td>
-                        <td data-order="{{ (float) $variant->size->label }}">EU {{ $variant->size->label }}</td>
+                        <td data-order="{{ (float) $variant->size->label }}">{{ $variant->label() }}</td>
                         <td class="{{ $variant->isLowStock() ? 'low-stock' : '' }}">{{ $variant->stock_quantity }}</td>
                         <td>{{ $variant->product->low_stock_threshold }}</td>
                     </tr>

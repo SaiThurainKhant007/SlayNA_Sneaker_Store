@@ -139,7 +139,7 @@
 <footer class="sl-footer mt-5">
     <div class="container">
         <div class="row g-4">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <a href="{{ route('home') }}" class="sl-logo sl-footer-logo sl-brand">@include('partials._logo_mark', ['id' => 'sl-mark-foot'])<span class="sl-logo-text">SLAY<span>NA</span><small>SNEAKER STORE</small></span></a>
                 <p class="sl-footer-tagline">Authentic sneakers from the world's top brands, delivered across Yangon and Myanmar.</p>
                 <ul class="sl-footer-social" aria-label="SlayNa on social media">
@@ -177,7 +177,7 @@
                 </ul>
             </div>
 
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-6 col-lg-2">
                 <h2 class="sl-footer-title">Visit &amp; Contact</h2>
                 <ul class="sl-footer-contact">
                     <li>
@@ -197,6 +197,30 @@
                         <span>{{ $shop['hours'] }}</span>
                     </li>
                 </ul>
+            </div>
+
+            {{-- Drop alerts signup, like the newsletter boxes on Kith and Sneakersnstuff --}}
+            <div class="col-md-6 col-lg-3" id="drop-alerts">
+                <h2 class="sl-footer-title">Get the Drop</h2>
+                <p class="sl-drop-text">New arrivals, restocks and deals, straight to your inbox. Be first in line.</p>
+                @if (session('subscribed'))
+                    <p class="sl-drop-done" role="status"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> {{ session('subscribed') }}</p>
+                @else
+                    <form method="POST" action="{{ route('subscribe') }}" class="sl-drop-form" novalidate>
+                        @csrf
+                        <label for="drop-email" class="visually-hidden">Email address</label>
+                        <div class="sl-drop-field @error('email', 'subscribe') is-invalid @enderror">
+                            <input type="email" id="drop-email" name="email" value="{{ old('email') }}" placeholder="Your email address"
+                                   autocomplete="email" required maxlength="255"
+                                   @error('email', 'subscribe') aria-invalid="true" aria-describedby="drop-email-error" @enderror>
+                            <button type="submit">Subscribe</button>
+                        </div>
+                        @error('email', 'subscribe')
+                            <p class="sl-drop-error" id="drop-email-error">{{ $message }}</p>
+                        @enderror
+                    </form>
+                    <p class="sl-drop-note">No spam. Unsubscribe anytime by contacting us.</p>
+                @endif
             </div>
         </div>
     </div>
@@ -254,6 +278,7 @@
     });
 })();
 </script>
+<script src="{{ asset('js/photo-cutout.js') }}"></script>
 <script src="{{ asset('js/falling-stars.js') }}" defer></script>
 </body>
 </html>

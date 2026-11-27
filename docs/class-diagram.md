@@ -35,7 +35,7 @@ After changing a class, update `docs/make_staruml_diagram.py` and run
 | Product | `products` |
 | ProductSize | `product_sizes` |
 | ProductImage | `product_images` |
-| Promotion | `promotions` |
+| Promotion | `promotions` (home Hot Deals: `brand_id` + `original_price`; Limited Edition still uses `product_id`) |
 | GalleryImage | `gallery_images` |
 | Brand | `brands` |
 | Category | `categories` |
@@ -170,6 +170,7 @@ class Product {
   +int brand_id
   +int category_id
   +string image_path
+  +string image_label
   +int low_stock_threshold
   +enum status
   +effectivePrice() float
@@ -177,13 +178,16 @@ class Product {
   +averageRating() float
   +reviewCount() int
   +galleryUrls() array
+  +gallery() array
   +scopeLowStock()
 }
 class ProductSize {
   +int id
   +int product_id
   +int size_id
+  +string color
   +int stock_quantity
+  +label() string
   +isLowStock() bool
   +scopeLowStock()
 }
@@ -191,13 +195,17 @@ class ProductImage {
   +int id
   +int product_id
   +string image_path
+  +string label
   +int sort_order
   +imageUrl() string
 }
 class Promotion {
   +int id
   +string title
+  +string type
   +string description
+  +int brand_id
+  +decimal original_price
   +int product_id
   +int discount_percent
   +string image_path
@@ -205,8 +213,10 @@ class Promotion {
   +date ends_on
   +bool is_active
   +isLive() bool
+  +listPrice() float
   +discountedPrice() float
   +savings() float
+  +displayBrand() Brand
   +scopeLive()
 }
 class GalleryImage {
@@ -214,7 +224,6 @@ class GalleryImage {
   +string image_path
   +string title
   +string subtitle
-  +int product_id
   +int sort_order
   +bool is_active
   +scopeShown()
@@ -252,10 +261,11 @@ Category "1" -- "0..*" Product : groups
 Product "1" *-- "0..*" ProductSize : available in
 Size "1" -- "0..*" ProductSize : used by
 Product "1" *-- "0..*" ProductImage : photos
-Product "1" -- "0..*" Promotion : discounts
-Product "0..1" -- "0..*" GalleryImage : featured in
+Brand "1" -- "0..*" Promotion : featured in
+Product "0..1" -- "0..*" Promotion : limited edition
 Product "1" -- "0..*" Review : rates
 ProductSize "1" -- "0..*" Cart : holds
 ProductSize "1" -- "0..*" OrderItem : orders
 Promotion "0..1" -- "0..*" OrderItem : applied
 ```
+

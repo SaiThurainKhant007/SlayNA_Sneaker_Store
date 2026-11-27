@@ -10,10 +10,34 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Guarded(['id'])]
 class Promotion extends Model
 {
+    /** Home-page Hot Deals card only — does not change shop catalogue prices. */
+    public const TYPE_PROMOTION = 'promotion';
+
+    /** Limited Edition: featured and sold on the home page at full price (never discounted). */
+    public const TYPE_LIMITED = 'limited';
+
+    public const TYPES = [self::TYPE_PROMOTION => 'Promotion', self::TYPE_LIMITED => 'Limited Edition'];
+
+    public function isLimited(): bool
+    {
+        return $this->type === self::TYPE_LIMITED;
+    }
+
+    public function typeLabel(): string
+    {
+        return self::TYPES[$this->type] ?? 'Promotion';
+    }
+
+    public function scopeOfType(Builder $query, string $type): Builder
+    {
+        return $query->where('type', $type);
+    }
+
     protected function casts(): array
     {
         return [
             'discount_percent' => 'integer',
+            'original_price' => 'decimal:2',
             'ends_on' => 'date',
             'is_active' => 'boolean',
         ];
@@ -24,6 +48,33 @@ class Promotion extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    /** Brand for display: the promotion's own brand, or the Limited Edition's product brand. */
+    public function displayBrand(): ?Brand
+    {
+        return $this->brand ?? $this->product?->brand;
+    }
+
+    /** List / card title under the promo name. */
+    public function displayName(): string
+    {
+        return $this->isLimited() ? (string) $this->product?->name : (string) $this->title;
+    }
+
+    /** Full (pre-discount) price shown on the card. */
+    public function listPrice(): float
+    {
+        if ($this->isLimited()) {
+            return (float) $this->product->price;
+        }
+
+        return (float) $this->original_price;
+    }
+
     /** Today's date in the shop's own timezone, so promotions end at local midnight. */
     public static function today(): string
     {
@@ -32,7 +83,7 @@ class Promotion extends Model
 
     /**
      * A promotion applies from the moment it is switched on until the end of its end date (if any).
-     * The same rule drives the home page, product pages, cart and checkout, so the advertised price is always the charged price.
+     * Discount promotions are home-page cards only; Limited Editions are sold from the home page.
      */
     public function scopeLive(Builder $query): Builder
     {
@@ -48,26 +99,35 @@ class Promotion extends Model
     /** Price after discount, rounded to whole kyats. */
     public function discountedPrice(): float
     {
-        return round((float) $this->product->price * (100 - $this->discount_percent) / 100);
+        if ($this->isLimited()) {
+            return $this->listPrice();
+        }
+
+        return round($this->listPrice() * (100 - $this->discount_percent) / 100);
     }
 
     public function savings(): float
     {
-        return (float) $this->product->price - $this->discountedPrice();
+        return $this->listPrice() - $this->discountedPrice();
     }
 
     public function imageUrl(): string
     {
-        return $this->image_path ? asset('storage/'.$this->image_path) : $this->product->imageUrl();
+        if ($this->image_path) {
+            return asset('storage/'.$this->image_path);
+        }
+
+        return $this->product?->imageUrl() ?? asset('img/no-image.png');
     }
 
-    /** Second image for the hover/tap swap; the product photo stands in when only a promo image was uploaded. */
+    /** Second image for the hover/tap swap. */
     public function hoverImageUrl(): ?string
     {
         if ($this->hover_image_path) {
             return asset('storage/'.$this->hover_image_path);
         }
 
-        return $this->image_path ? $this->product->imageUrl() : null;
+        // Limited Edition can fall back to the product photo when only a promo image was set.
+        return ($this->image_path && $this->product) ? $this->product->imageUrl() : null;
     }
 }

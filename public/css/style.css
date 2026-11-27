@@ -1009,7 +1009,6 @@ img { max-width: 100%; }
 .sl-admin-gallery-thumb { position: relative; aspect-ratio: 4 / 5; background: #eee; }
 .sl-admin-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
 .sl-admin-gallery-thumb .badge { position: absolute; top: .6rem; left: .6rem; }
-.sl-admin-gallery-thumb .sl-admin-gallery-order { left: auto; right: .6rem; }
 
 @media (prefers-reduced-motion: reduce) {
     .sl-gallery-item img, .sl-gallery-item figcaption { transition: none; }
@@ -1867,3 +1866,227 @@ table.dataTable td.text-end, table.dataTable th.text-end { text-align: right; }
 .sl-error-code { font-family: var(--sl-head); font-size: clamp(6rem, 22vw, 11rem); line-height: .9; margin: 1rem 0 0; color: var(--sl-red); }
 .sl-error-title { font-size: 1.6rem; margin: 0; }
 .sl-error-text { max-width: 30rem; color: var(--bs-secondary-color); margin: 0 0 .75rem; }
+
+/* ===================== Sneaker Showcase (home, below Newest Arrivals) ===================== */
+.sl-showcase {
+    margin: 4rem 0 1rem;
+    /* Light theme (default) */
+    --sl-orbit-bg: radial-gradient(ellipse at 50% 85%, #fbe3e4 0%, #f1f1f4 65%);
+    --sl-orbit-line: #e2e2e7;
+    --sl-orbit-glow: rgba(227,23,31,.22);
+    --sl-orbit-shadow: rgba(20,20,22,.28);
+    --sl-orbit-btn-bg: #fff;
+    --sl-orbit-btn-line: #d6d6dc;
+    --sl-orbit-btn-ink: #141416;
+    --sl-orbit-muted: #5f5f67;
+}
+/* Dark theme: follows the nav toggle */
+[data-bs-theme="dark"] .sl-showcase {
+    --sl-orbit-bg: radial-gradient(ellipse at 50% 85%, #2a1214 0%, #141416 65%);
+    --sl-orbit-line: #2a2a2f;
+    --sl-orbit-glow: rgba(227,23,31,.35);
+    --sl-orbit-shadow: rgba(0,0,0,.6);
+    --sl-orbit-btn-bg: #1c1c20;
+    --sl-orbit-btn-line: #3a3a40;
+    --sl-orbit-btn-ink: #fff;
+    --sl-orbit-muted: #9a9aa2;
+}
+
+/* Orbit wheel. Without JavaScript the sneakers simply wrap in a row; .is-live switches to the orbit. */
+.sl-orbit {
+    position: relative; border-radius: 20px; overflow: hidden;
+    background: var(--sl-orbit-bg);
+    border: 1px solid var(--sl-orbit-line);
+}
+.sl-orbit:focus-visible { outline: 2px solid var(--sl-red); outline-offset: 3px; }
+.sl-orbit-stage { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; padding: 1.5rem; }
+.sl-orbit-stage.is-live { display: block; position: relative; height: 440px; padding: 0; cursor: grab; touch-action: pan-y; user-select: none; }
+.sl-orbit-stage.is-dragging { cursor: grabbing; }
+.sl-orbit-item { display: block; width: 210px; aspect-ratio: 1; border-radius: 16px; }
+.sl-orbit-stage.is-live .sl-orbit-item { position: absolute; left: calc(50% - 105px); top: calc(50% - 115px); will-change: transform; }
+.sl-orbit-item img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; filter: drop-shadow(0 16px 18px var(--sl-orbit-shadow)); }
+.sl-orbit-item:focus-visible { outline: 3px solid var(--sl-red); outline-offset: 4px; }
+.sl-orbit-floor {
+    position: absolute; left: 15%; right: 15%; bottom: 28px; height: 40px; pointer-events: none;
+    background: radial-gradient(ellipse at center, var(--sl-orbit-glow), transparent 70%);
+}
+.sl-orbit-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
+.sl-orbit-btn {
+    width: var(--sl-tap); height: var(--sl-tap); border-radius: 50%; border: 1px solid var(--sl-orbit-btn-line);
+    background: var(--sl-orbit-btn-bg); color: var(--sl-orbit-btn-ink); font-size: 1.1rem;
+}
+.sl-orbit-btn:hover, .sl-orbit-btn:focus-visible { background: var(--sl-red); border-color: var(--sl-red); color: #fff; }
+/* "Spin for me" button between the arrows */
+.sl-orbit-spin {
+    min-height: var(--sl-tap); padding: 0 1.4rem; border: 0; border-radius: 999px;
+    background: var(--sl-red); color: #fff; font-weight: 700; letter-spacing: .02em;
+    display: inline-flex; align-items: center; gap: .5rem; transition: background-color .15s ease, transform .15s ease;
+}
+.sl-orbit-spin:hover, .sl-orbit-spin:focus-visible { background: var(--sl-red-dark); }
+.sl-orbit-spin:active { transform: scale(.97); }
+.sl-orbit-spin:disabled { opacity: .7; cursor: progress; }
+.sl-orbit-spin:focus-visible { outline: 2px solid var(--bs-body-color); outline-offset: 3px; }
+
+/* Name and price of the sneaker at the front of the wheel */
+.sl-orbit-caption { margin: 1rem 0 0; text-align: center; line-height: 1.25; }
+.sl-orbit-caption strong { display: block; font-size: 1.3rem; }
+.sl-orbit-caption [data-orbit-price] { color: var(--sl-orbit-muted); font-size: 1rem; font-weight: 600; }
+.sl-orbit-pick {
+    display: inline-block; margin-bottom: .35rem; padding: .15rem .65rem; border-radius: 999px;
+    background: var(--sl-red); color: #fff; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+}
+.sl-orbit-pick[hidden] { display: none; }
+.sl-orbit-caption.is-picked strong { color: var(--sl-red); animation: sl-pick-in .35s ease; }
+@keyframes sl-pick-in { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sl-orbit-caption.is-picked strong { animation: none; } }
+
+@media (max-width: 575.98px) {
+    .sl-orbit-stage.is-live { height: 300px; }
+    .sl-orbit-item { width: 150px; }
+    .sl-orbit-stage.is-live .sl-orbit-item { left: calc(50% - 75px); top: calc(50% - 95px); }
+}
+
+/* ===================== Product page buy box (photo circles, size buttons, -/+ quantity, pill button) ===================== */
+.sl-buy { margin-top: 1rem; }
+.sl-buy-group { margin: 0 0 1.25rem; padding: 0; border: 0; }
+.sl-buy-label { float: none; width: auto; margin: 0 0 .6rem; padding: 0; font-size: 1rem; font-weight: 700; }
+.sl-buy-label span { font-weight: 400; }
+
+.sl-swatches { display: flex; flex-wrap: wrap; gap: .6rem; }
+.sl-swatch {
+    width: 52px; height: 52px; padding: 3px; border-radius: 50%;
+    border: 2px solid transparent; background: none; transition: border-color .15s ease;
+}
+.sl-swatch img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: var(--bs-tertiary-bg); }
+.sl-swatch:hover { border-color: var(--bs-border-color); }
+.sl-swatch.is-active { border-color: var(--bs-body-color); }
+.sl-swatch:focus-visible { outline: 2px solid var(--sl-red); outline-offset: 2px; }
+
+.sl-size-grid { display: flex; flex-wrap: wrap; gap: .6rem; }
+.sl-size { position: relative; margin: 0; }
+.sl-size input { position: absolute; opacity: 0; pointer-events: none; }
+.sl-size > span {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 84px; min-height: var(--sl-tap); padding: .4rem .9rem;
+    border: 1px solid var(--bs-border-color); border-radius: 4px;
+    cursor: pointer; user-select: none; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.sl-size:hover > span { border-color: var(--bs-body-color); }
+.sl-size input:checked + span { border: 2px solid var(--bs-body-color); font-weight: 700; }
+.sl-size input:focus-visible + span { outline: 2px solid var(--sl-red); outline-offset: 2px; }
+.sl-size.is-sold-out > span {
+    border-style: dashed; color: var(--bs-secondary-color); cursor: not-allowed;
+    /* diagonal line through a sold-out size */
+    background: linear-gradient(to top right, transparent calc(50% - 1px), var(--bs-secondary-color) 50%, transparent calc(50% + 1px));
+}
+.sl-stock-note { min-height: 1.2em; margin: .5rem 0 0; color: var(--sl-red); font-size: .9rem; font-weight: 600; }
+.sl-stock-note:empty { min-height: 0; margin: 0; }
+
+.sl-going-fast {
+    margin: 0 0 1.25rem; padding: .5rem .75rem; text-align: center; font-size: .9rem;
+    background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: 4px;
+}
+.sl-going-fast em { color: var(--bs-secondary-color); }
+
+.sl-buy-row { display: flex; gap: .9rem; align-items: center; max-width: 30rem; }
+.sl-qty {
+    display: flex; align-items: center; flex: none;
+    height: 52px; padding: 0 .4rem; border: 1px solid var(--bs-border-color); border-radius: 999px;
+}
+.sl-qty input {
+    width: 2.6rem; border: 0; background: none; color: inherit; text-align: center; font-size: 1.05rem;
+    -moz-appearance: textfield; appearance: textfield;
+}
+.sl-qty input::-webkit-inner-spin-button, .sl-qty input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.sl-qty input:focus-visible { outline: 2px solid var(--sl-red); border-radius: 4px; }
+.sl-qty-btn {
+    width: 34px; height: 34px; border: 0; border-radius: 50%;
+    background: var(--bs-body-color); color: var(--bs-body-bg); font-size: 1.2rem; line-height: 1;
+}
+.sl-qty-btn:focus-visible { outline: 2px solid var(--sl-red); outline-offset: 2px; }
+.sl-add-btn {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 1.5rem;
+    border: 0; border-radius: 999px; background: #1c1b1a; color: #fff; font-weight: 700; text-decoration: none;
+    transition: background-color .15s ease;
+}
+.sl-add-btn:hover, .sl-add-btn:focus-visible { background: var(--sl-red); color: #fff; }
+.sl-add-btn:disabled { background: var(--bs-secondary-color); cursor: not-allowed; }
+[data-bs-theme="dark"] .sl-add-btn:not(:hover):not(:focus-visible):not(:disabled) { background: #fff; color: #141416; }
+
+/* Admin product form: Color/Type name under each photo (current and newly chosen) */
+.sl-photo-label { margin-top: .35rem; font-size: .8rem; }
+.sl-photo-cell:has(.sl-photo-remove input:checked) .sl-photo-label { visibility: hidden; }
+.sl-crop-preview-item .sl-photo-label { width: 120px; }
+
+/* ===================== Product photos on a white smoke panel =====================
+   The photos have white backgrounds baked in. js/photo-cutout.js makes that white transparent in the browser,
+   so only the background takes the panel colour and the shoe keeps its real colours. Same panel in both themes. */
+:root { --sl-photo-bg: #f5f5f5; }   /* white smoke */
+.sl-photo-bg { background: var(--sl-photo-bg) !important; overflow: hidden; }
+.sl-photo-bg img { background: transparent !important; transition: opacity .2s ease; }
+/* While a photo is being cut out it stays hidden (only when the script is running) */
+.sl-cutout .sl-photo-bg img:not(.is-cut) { opacity: 0; }
+
+/* Product cards */
+.product-card .sl-photo-bg img { display: block; }
+
+/* Product page: big photo, thumbnails, Color/Type circles */
+.sl-pdp-main.sl-photo-bg { aspect-ratio: 4 / 3; }
+.sl-pdp-main.sl-photo-bg img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.sl-swatch .sl-photo-bg { display: block; width: 100%; height: 100%; border-radius: 50%; }
+.sl-swatch .sl-photo-bg img { background: transparent; }
+
+/* ===================== Footer: "Get the Drop" email signup (top-right column) ===================== */
+.sl-drop-text { margin: 0 0 .9rem; line-height: 1.55; }
+.sl-drop-field {
+    display: flex; align-items: stretch; border: 1px solid #3a3a40; border-radius: 999px; overflow: hidden;
+    background: #1c1c20; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.sl-drop-field:focus-within { border-color: var(--sl-red); box-shadow: 0 0 0 3px rgba(227,23,31,.25); }
+.sl-drop-field.is-invalid { border-color: #ff4d55; }
+.sl-drop-field input {
+    flex: 1; min-width: 0; min-height: var(--sl-tap); padding: 0 1rem; border: 0; background: none; color: #fff; font-size: .95rem;
+}
+.sl-drop-field input::placeholder { color: #8d8d95; }
+.sl-drop-field input:focus { outline: none; }
+.sl-drop-field button {
+    flex: none; padding: 0 1.1rem; border: 0; background: var(--sl-red); color: #fff; font-weight: 700;
+    letter-spacing: .03em; text-transform: uppercase; font-size: .8rem; transition: background-color .15s ease;
+}
+.sl-drop-field button:hover { background: var(--sl-red-dark); }
+.sl-drop-field button:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+.sl-drop-error { margin: .45rem 0 0 .25rem; color: #ff4d55; font-size: .85rem; }
+.sl-drop-note { margin: .55rem 0 0 .25rem; color: #8d8d95; font-size: .8rem; }
+.sl-drop-done { display: flex; gap: .5rem; align-items: flex-start; margin: 0; padding: .75rem .9rem; border-radius: 12px; background: rgba(25,135,84,.15); color: #b9f0d3; }
+.sl-drop-done i { color: #3ddc97; margin-top: .1rem; }
+
+/* Admin product form: stock grid, one row per colour */
+.sl-stock-row { padding: .75rem 0; border-top: 1px solid var(--bs-border-color); }
+.sl-stock-row:first-child { border-top: 0; padding-top: 0; }
+.sl-stock-name { margin: 0 0 .5rem; font-weight: 700; }
+.sl-stock-sizes { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: .5rem; }
+.sl-stock-cell { display: flex; flex-direction: column; gap: .2rem; margin: 0; font-size: .8rem; color: var(--bs-secondary-color); }
+
+/* ===================== Limited Edition (featured at full price, never discounted) ===================== */
+.sl-limited-badge { background: linear-gradient(135deg, #1a1a1d, #3a3020) !important; color: #f2d27a !important; border: 1px solid #c9a646; font-weight: 700; letter-spacing: .03em; }
+.sl-promo-badge.sl-limited-badge { padding: .3rem .6rem; font-size: .75rem; }
+.sl-type-pill {
+    display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .7rem; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; background: rgba(227,23,31,.12); color: var(--sl-red);
+}
+.sl-type-pill--limited { background: rgba(201,166,70,.18); color: #9a7a1e; }
+[data-bs-theme="dark"] .sl-type-pill--limited { color: #f2d27a; }
+.sl-limited-card { border: 1px solid rgba(201,166,70,.55); }
+.sl-limited-tag { color: #9a7a1e; }
+[data-bs-theme="dark"] .sl-limited-tag { color: #f2d27a; }
+.sl-limited-price { font-size: 1.25rem; font-weight: 700; }
+.sl-btn-limited { background: #1a1a1d; color: #f2d27a; border: 1px solid #c9a646; font-weight: 600; }
+.sl-btn-limited:hover, .sl-btn-limited:focus-visible { background: #c9a646; color: #1a1a1d; border-color: #c9a646; }
+.sl-limited-section { margin-top: 3rem; }
+.sl-limited-name { font-size: 1.1rem; font-weight: 700; }
+.sl-limited-sizes { display: flex; flex-wrap: wrap; gap: .35rem; }
+.sl-size--sm > span { min-width: 46px; min-height: 36px; padding: .2rem .5rem; font-size: .85rem; }
+.sl-limited-qty { width: 70px; flex: none; }
+.sl-limited-soldout { color: var(--sl-red); font-weight: 700; }
+.sl-limited-buy fieldset { border: 0; padding: 0; margin: 0; }
+.sl-limited-buy legend { float: none; width: auto; font-size: .85rem; }

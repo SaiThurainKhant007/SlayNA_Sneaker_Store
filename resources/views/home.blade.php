@@ -167,6 +167,8 @@
     @endforelse
 </div>
 
+@include('partials._sneaker_showcase')
+
 @if ($gallery->isNotEmpty())
     {{-- Promotional model photos (managed in Admin > Model Gallery). Tap a photo to view it full screen. --}}
     <section class="sl-gallery-section" aria-labelledby="gallery-title">
@@ -178,13 +180,10 @@
                     <button type="button" class="sl-gallery-open" data-gallery-index="{{ $loop->index }}" aria-label="View larger: {{ $photo->altText() }}">
                         <img src="{{ $photo->imageUrl() }}" alt="{{ $photo->altText() }}" loading="lazy">
                     </button>
-                    @if ($photo->title || $photo->subtitle || $photo->product)
+                    @if ($photo->title || $photo->subtitle)
                         <figcaption>
                             @if ($photo->title)<strong>{{ $photo->title }}</strong>@endif
                             @if ($photo->subtitle)<span>{{ $photo->subtitle }}</span>@endif
-                            @if ($photo->product)
-                                <a href="{{ route('products.show', $photo->product) }}" class="sl-gallery-shop">Shop this look <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                            @endif
                         </figcaption>
                     @endif
                 </figure>
@@ -268,8 +267,8 @@
                 <div class="col">
                     <article class="card sl-promo-card h-100">
                         {{-- Hover (mouse) or tap (touch) swaps to the second image --}}
-                        <div class="sl-promo-media" @if ($promo->hoverImageUrl()) tabindex="0" aria-label="{{ $promo->product->name }}: tap to see another view" @endif>
-                            <img src="{{ $promo->imageUrl() }}" alt="{{ $promo->product->name }}" class="sl-promo-img" loading="lazy">
+                        <div class="sl-promo-media" @if ($promo->hoverImageUrl()) tabindex="0" aria-label="{{ $promo->title }}: tap to see another view" @endif>
+                            <img src="{{ $promo->imageUrl() }}" alt="{{ $promo->title }}" class="sl-promo-img" loading="lazy">
                             @if ($promo->hoverImageUrl())
                                 <img src="{{ $promo->hoverImageUrl() }}" alt="" class="sl-promo-img sl-promo-img--alt" loading="lazy">
                                 <span class="sl-promo-hint" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span>
@@ -277,18 +276,87 @@
                             <span class="sl-promo-badge">-{{ $promo->discount_percent }}%</span>
                         </div>
                         <div class="card-body d-flex flex-column">
-                            <p class="sl-promo-tag mb-1">{{ $promo->title }}</p>
-                            <h3 class="h6 mb-1">{{ $promo->product->name }}</h3>
-                            <p class="text-muted small mb-2">{{ $promo->product->brand->name }}@if ($promo->description) &middot; {{ $promo->description }}@endif</p>
+                            <p class="mb-1"><span class="sl-type-pill">Promotion</span></p>
+                            <h3 class="h6 mb-1">{{ $promo->title }}</h3>
+                            <p class="text-muted small mb-2">{{ $promo->displayBrand()?->name }}@if ($promo->description) &middot; {{ $promo->description }}@endif</p>
                             <div class="sl-promo-price mb-1">
                                 <span class="sl-promo-now">{{ number_format($promo->discountedPrice(), 0) }} MMK</span>
-                                <span class="sl-promo-was">{{ number_format((float) $promo->product->price, 0) }} MMK</span>
+                                <span class="sl-promo-was">{{ number_format($promo->listPrice(), 0) }} MMK</span>
                             </div>
                             <p class="small text-success mb-2">You save {{ number_format($promo->savings(), 0) }} MMK</p>
                             @if ($promo->ends_on)
                                 <p class="small text-muted mb-2"><i class="bi bi-clock" aria-hidden="true"></i> Ends {{ $promo->ends_on->format('j M Y') }}</p>
                             @endif
-                            <a href="{{ route('products.show', $promo->product) }}" class="btn sl-btn-red btn-sm mt-auto">Shop the Deal</a>
+                            <a href="{{ route('products.index', array_filter(['brand' => $promo->brand_id])) }}" class="btn sl-btn-red btn-sm mt-auto">Shop the Brand</a>
+                        </div>
+                    </article>
+                </div>
+            @endforeach
+        </div>
+    </section>
+@endif
+
+@if ($limitedEditions->isNotEmpty())
+    {{-- Limited Edition: featured at full price, never discounted --}}
+    <section class="sl-promo-section sl-limited-section" aria-labelledby="limited-title">
+        <p class="sl-eyebrow text-center mb-1">Rare pairs, only here, while they last</p>
+        <h2 id="limited-title" class="sl-section-title text-center">Limited Edition</h2>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 g-md-4">
+            @foreach ($limitedEditions as $promo)
+                <div class="col">
+                    <article class="card sl-promo-card sl-limited-card h-100">
+                        <div class="sl-promo-media" @if ($promo->hoverImageUrl()) tabindex="0" aria-label="{{ $promo->product->name }}: tap to see another view" @endif>
+                            <img src="{{ $promo->imageUrl() }}" alt="{{ $promo->product->name }}" class="sl-promo-img" loading="lazy">
+                            @if ($promo->hoverImageUrl())
+                                <img src="{{ $promo->hoverImageUrl() }}" alt="" class="sl-promo-img sl-promo-img--alt" loading="lazy">
+                                <span class="sl-promo-hint" aria-hidden="true"><i class="bi bi-arrow-repeat"></i></span>
+                            @endif
+                            <span class="sl-promo-badge sl-limited-badge"><i class="bi bi-gem" aria-hidden="true"></i> Limited Edition</span>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <p class="mb-1"><span class="sl-type-pill sl-type-pill--limited">Limited Edition</span></p>
+                            <h3 class="sl-limited-name mb-1">{{ $promo->title }}</h3>
+                            <p class="text-muted small mb-2">{{ $promo->product->brand->name }}@if ($promo->description) &middot; {{ $promo->description }}@endif</p>
+                            <div class="sl-promo-price mb-2">
+                                <span class="sl-limited-price">{{ number_format((float) $promo->product->price, 0) }} MMK</span>
+                            </div>
+                            {{-- Bought right here: pick a size, then Add to Cart (cart and checkout as usual) --}}
+                            @php
+                                $sizes = $promo->product->variants->sortBy(fn ($v) => (float) $v->size->label)->values();
+                                $first = $sizes->first(fn ($v) => $v->stock_quantity > 0);
+                            @endphp
+                            @if (! $first)
+                                <p class="sl-limited-soldout mt-auto mb-0">Sold out</p>
+                            @elseif (auth()->check() && ! auth()->user()->isCustomer())
+                                <p class="small text-muted mt-auto mb-0">Customers buy Limited Editions here.</p>
+                            @else
+                                <form method="POST" action="{{ route('cart.store') }}" class="sl-limited-buy mt-auto" data-limited-buy>
+                                    @csrf
+                                    <fieldset class="mb-2">
+                                        <legend class="small fw-semibold mb-1">Size: <span data-limited-size>EU {{ $first->size->label }}</span></legend>
+                                        <div class="sl-limited-sizes">
+                                            @foreach ($sizes as $variant)
+                                                @php $out = $variant->stock_quantity <= 0; @endphp
+                                                <label class="sl-size sl-size--sm {{ $out ? 'is-sold-out' : '' }}">
+                                                    <input type="radio" name="product_size_id" value="{{ $variant->id }}" required data-size="EU {{ $variant->size->label }}"
+                                                           data-stock="{{ $variant->stock_quantity }}" @checked($variant->id === $first->id) @disabled($out)>
+                                                    <span>{{ $variant->size->label }}<span class="visually-hidden">{{ $out ? ', sold out' : '' }}</span></span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </fieldset>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <label class="visually-hidden" for="limited-qty-{{ $promo->id }}">Quantity</label>
+                                        <input type="number" id="limited-qty-{{ $promo->id }}" name="quantity" value="1" min="1" max="{{ min(10, $first->stock_quantity) }}"
+                                               class="form-control form-control-sm sl-limited-qty" data-limited-qty>
+                                        @auth
+                                            <button type="submit" class="btn sl-btn-limited btn-sm flex-fill">Add to Cart</button>
+                                        @else
+                                            <a href="{{ route('login') }}" class="btn sl-btn-limited btn-sm flex-fill">Log in to Buy</a>
+                                        @endauth
+                                    </div>
+                                </form>
+                            @endif
                         </div>
                     </article>
                 </div>
@@ -298,6 +366,18 @@
 @endif
 
 @include('partials._promo_swap_script')
+<script>
+// Limited Edition buy boxes: the chosen size sets the label and the most you can add
+document.querySelectorAll('[data-limited-buy]').forEach((form) => {
+    const label = form.querySelector('[data-limited-size]');
+    const qty = form.querySelector('[data-limited-qty]');
+    form.querySelectorAll('input[name=product_size_id]').forEach((r) => r.addEventListener('change', () => {
+        label.textContent = r.dataset.size;
+        qty.max = Math.min(10, +r.dataset.stock);
+        if (+qty.value > +qty.max) qty.value = qty.max;
+    }));
+});
+</script>
 
 {{-- Home page only: corner badge. The "SY" monogram stays still; the store name rotates around it. --}}
 <div class="sl-spin-badge" aria-hidden="true">

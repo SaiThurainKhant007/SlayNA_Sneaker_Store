@@ -34,6 +34,14 @@ class Product extends Model
         return collect([$this->imageUrl()])->merge($this->images->map->imageUrl())->all();
     }
 
+    /** Main photo first, then the extra photos, each with its colour/type name: [['url' => ..., 'label' => ?string], ...]. */
+    public function gallery(): array
+    {
+        return collect([['url' => $this->imageUrl(), 'label' => $this->image_label]])
+            ->merge($this->images->map(fn ($photo) => ['url' => $photo->imageUrl(), 'label' => $photo->label]))
+            ->all();
+    }
+
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
@@ -59,16 +67,19 @@ class Product extends Model
         return $this->hasMany(Promotion::class);
     }
 
-    /** The biggest running promotion for this product, if any. */
+    /**
+     * Discount Hot Deals are home-page only and no longer attach to shop products, so this
+     * relation stays empty. Kept so views/checkout that still eager-load it keep working.
+     */
     public function livePromotion(): HasOne
     {
-        return $this->hasOne(Promotion::class)->live()->orderByDesc('discount_percent');
+        return $this->hasOne(Promotion::class)->live()->ofType(Promotion::TYPE_PROMOTION)->orderByDesc('discount_percent');
     }
 
-    /** What the customer actually pays: the promotion price when one is running. */
+    /** Catalogue / cart price — always the product's own price (Hot Deals do not discount the shop). */
     public function effectivePrice(): float
     {
-        return $this->livePromotion ? $this->livePromotion->setRelation('product', $this)->discountedPrice() : (float) $this->price;
+        return (float) $this->price;
     }
 
     /** Active products with at least one size at or below the product's low-stock threshold. */

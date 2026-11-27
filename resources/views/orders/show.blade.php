@@ -46,7 +46,7 @@
                     <li class="list-group-item d-flex justify-content-between gap-3 px-0">
                         <span>
                             <a href="{{ route('products.show', $item->variant->product) }}">{{ $item->variant->product->name }}</a>
-                            <span class="text-muted small">&middot; EU {{ $item->variant->size->label }} &times; {{ $item->quantity }}</span>
+                            <span class="text-muted small">&middot; {{ $item->variant->label() }} &times; {{ $item->quantity }}</span>
                             @if ($item->isPromotional())
                                 <br><span class="badge text-bg-danger">-{{ $item->discount_percent }}%</span>
                                 <small class="text-muted">{{ $item->promotion_title }} &middot; saved {{ number_format($item->savings(), 0) }} MMK</small>

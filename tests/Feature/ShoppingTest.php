@@ -211,6 +211,35 @@ class ShoppingTest extends TestCase
             ->assertDontSee('Secret written review');
     }
 
+    public function test_product_page_buy_box_has_size_buttons_quantity_stepper_and_going_fast_note(): void
+    {
+        $variant = $this->makeVariant(stock: 3);
+        $soldOut = ProductSize::create([
+            'product_id' => $variant->product_id,
+            'size_id' => Size::create(['label' => '42'])->id,
+            'stock_quantity' => 0,
+        ]);
+        $url = route('products.show', $variant->product_id);
+        $customer = Customer::factory()->create();
+
+        // Size buttons: the in-stock size is picked, the sold-out one is crossed out and can't be chosen
+        $this->actingAs($customer)->get($url)->assertOk()
+            ->assertSee('data-size="EU 41" data-stock="3"', false)
+            ->assertSee('value="'.$soldOut->id.'"', false)
+            ->assertSee('sl-size is-sold-out', false)
+            ->assertSee('data-qty-step="1"', false)
+            ->assertSee('Add to Cart')
+            ->assertDontSee('Going fast!');
+
+        // 3 pairs sold in the last 30 days -> note appears; cancelled orders are ignored
+        foreach (['completed', 'cancelled'] as $status) {
+            $order = Order::create(['customer_id' => $customer->id, 'shipping_address' => 'Yangon', 'total_amount' => 435000, 'order_status' => $status]);
+            $order->items()->create(['product_size_id' => $variant->id, 'quantity' => 3, 'unit_price' => 145000]);
+        }
+
+        $this->get($url)->assertSee('Going fast!')->assertSee('3 pairs sold in the last 30 days');
+    }
+
     public function test_cart_page_has_no_review_form(): void
     {
         $variant = $this->makeVariant();

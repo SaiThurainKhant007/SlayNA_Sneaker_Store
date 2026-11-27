@@ -4,6 +4,7 @@
       data-crop-max="1600" longest side of the saved image in px (default 1600)
       data-crop-limit="8"  (multiple inputs) most files that can be chosen
       data-crop-main="x"   (multiple inputs) adds a "Main" radio named x with value "new:{index}" to each chosen image
+      data-crop-label="y"  (multiple inputs) adds a "Color/Type" text box named y[new:{index}] under each chosen image
     Picking a file opens the cropper; "Crop & use" swaps the cropped image into the input, "Use original"
     keeps the file as it was, Cancel skips it. Multiple files are cropped one after another, and on a
     `multiple` input each new pick is added to the earlier ones. Every chosen image has a × to remove it.
@@ -204,6 +205,19 @@
                         r.checked = index === mainIndex;
                         pick.append(r, ' Main');
                         item.appendChild(pick);
+                    }
+                    if (input.dataset.cropLabel) {
+                        // The typed name is kept on the file itself, so it survives re-drawing this list
+                        const t = document.createElement('input');
+                        t.type = 'text';
+                        t.name = `${input.dataset.cropLabel}[new:${index}]`;
+                        t.maxLength = 60;
+                        t.placeholder = 'Color/Type';
+                        t.className = 'form-control form-control-sm sl-photo-label';
+                        t.setAttribute('aria-label', 'Color/Type name for chosen image ' + (index + 1));
+                        t.value = f._slLabel || '';
+                        t.addEventListener('input', () => { f._slLabel = t.value; });
+                        item.appendChild(t);
                     }
                     box.appendChild(item);
                 });

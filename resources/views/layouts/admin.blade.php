@@ -37,6 +37,7 @@
         'Insights' => [
             ['admin.reports.index', 'admin.reports.*', 'bi-bar-chart-fill', 'Reports'],
             ['admin.feedback.index', 'admin.feedback.*', 'bi-envelope-paper-fill', 'Customer Feedback'],
+            ['admin.subscribers.index', 'admin.subscribers.*', 'bi-bell-fill', 'Drop Alerts'],
         ],
     ];
 @endphp

@@ -25,11 +25,13 @@ class CatalogSeeder extends Seeder
                 ['Air Max 90', 'Lifestyle', 185000, 'Visible Max Air cushioning and waffle outsole in an iconic 90s silhouette.'],
                 ['Vomero 17', 'Running', 175000, 'Plush ZoomX foam for long, comfortable training miles.'],
                 ['SB Dunk Low Pro', 'Skateboarding', 160000, 'Padded tongue and grippy cupsole tuned for the skatepark.'],
+                ['Air Monarch IV', 'Lifestyle', 105000, 'Chunky leather trainer with full-length Air-Sole cushioning.'],
             ],
             'Jordan' => [
                 ['Air Jordan 1 Mid', 'Basketball', 195000, 'The shoe that started it all, in a versatile mid-top cut.'],
                 ['Air Jordan 4 Retro', 'Basketball', 260000, 'Mesh panels, visible Air and the famous wing eyelets.'],
                 ['Jordan Luka 3', 'Basketball', 205000, 'Responsive cushioning and lockdown support for quick cuts.'],
+                ['Air Jordan 3 Retro', 'Basketball', 200000, 'Red tumbled leather with a cosy fleece collar and visible Air in the heel.'],
             ],
             'Adidas' => [
                 ['Samba OG', 'Lifestyle', 150000, 'Terrace-ready leather upper with a gum rubber sole.'],
@@ -41,6 +43,7 @@ class CatalogSeeder extends Seeder
                 ['Palermo', 'Lifestyle', 115000, 'Retro terrace sneaker with a suede upper and T-toe overlay.'],
                 ['Velocity Nitro 3', 'Running', 160000, 'Nitrogen-infused foam for a light, springy everyday run.'],
                 ['MB.03', 'Basketball', 195000, 'LaMelo Ball\'s signature shoe with bold, out-of-this-world styling.'],
+                ['Speedcat OG', 'Lifestyle', 130000, 'Low-profile motorsport classic in soft suede with a slim rubber sole.'],
             ],
             'New Balance' => [
                 ['550', 'Lifestyle', 165000, 'Clean late-80s basketball design reborn for the street.'],
@@ -50,6 +53,8 @@ class CatalogSeeder extends Seeder
             'Converse' => [
                 ['Chuck Taylor All Star Hi', 'Lifestyle', 85000, 'The timeless canvas high-top worn by every generation.'],
                 ['Chuck 70 Low', 'Lifestyle', 105000, 'Premium canvas and extra cushioning on a vintage profile.'],
+                ['Chuck 70 Hi Shenron', 'Lifestyle', 135000, 'Dragon Ball Z collab: black canvas wrapped in Shenron the dragon, on a cream midsole.'],
+                ['Chuck Taylor All Star Hi Vegeta', 'Lifestyle', 115000, 'Dragon Ball Z collab in Saiyan blue with the royal crest and gold piping.'],
                 ['One Star Pro', 'Skateboarding', 110000, 'Suede skate shoe with a durable, grippy vulcanised sole.'],
             ],
             'Vans' => [
@@ -82,7 +87,13 @@ class CatalogSeeder extends Seeder
             'Fila' => [
                 ['Disruptor II', 'Lifestyle', 98000, 'Bold, serrated chunky sole that defined 90s street style.'],
             ],
+            'Balenciaga' => [
+                ['Runner', 'Lifestyle', 1500000, 'Luxury runner with a deliberately worn, layered mesh-and-nylon upper.'],
+            ],
         ];
+
+        // Products added for the home page Sneaker Showcase start with 10 pairs in EU 39-44 instead of random stock
+        $showcaseStock = ['Speedcat OG', 'Runner', 'Chuck 70 Hi Shenron', 'Chuck Taylor All Star Hi Vegeta', 'Air Jordan 3 Retro', 'Air Monarch IV'];
 
         $categoryIds = collect(['Running', 'Basketball', 'Lifestyle', 'Skateboarding'])
             ->mapWithKeys(fn ($name) => [$name => Category::firstOrCreate(['name' => $name])->id]);
@@ -112,7 +123,9 @@ class CatalogSeeder extends Seeder
                     ProductSize::create([
                         'product_id' => $product->id,
                         'size_id' => $size->id,
-                        'stock_quantity' => random_int(0, 15),
+                        'stock_quantity' => in_array($name, $showcaseStock, true)
+                            ? ((int) $size->label >= 39 && (int) $size->label <= 44 ? 10 : 0)
+                            : random_int(0, 15),
                     ]);
                 }
             }

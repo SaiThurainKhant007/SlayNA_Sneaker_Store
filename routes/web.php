@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\SubscriberController as AdminSubscriberController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
@@ -34,6 +36,10 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::post('/contact/feedback', [PageController::class, 'storeFeedback'])
     ->middleware(['auth', 'role:customer'])
     ->name('contact.feedback');
+// Footer "Get the drop" email signup (anyone; limited to 5 tries a minute)
+Route::post('/subscribe', [SubscriberController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('subscribe');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/new-arrivals', [ProductController::class, 'newArrivals'])->name('products.new');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
@@ -132,9 +138,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/{report}.csv', [AdminReportController::class, 'export'])
-        ->whereIn('report', ['sales', 'top-products', 'inventory', 'customers'])
+        ->whereIn('report', ['sales', 'top-products', 'inventory', 'customers', 'subscribers'])
         ->name('reports.export');
 
     Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
     Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
+
+    Route::get('/subscribers', [AdminSubscriberController::class, 'index'])->name('subscribers.index');
+    Route::delete('/subscribers', [AdminSubscriberController::class, 'destroy'])->name('subscribers.destroy');
 });

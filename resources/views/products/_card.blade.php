@@ -1,8 +1,10 @@
 <div class="col">
     <div class="card product-card h-100">
-        <img src="{{ $product->imageUrl() }}"
-             class="card-img-top" alt="{{ $product->name }}"
-             data-fallback="{{ asset('img/no-image.png') }}" onerror="this.onerror=null;this.src=this.dataset.fallback">
+        <div class="card-img-top sl-photo-bg">
+            <img src="{{ $product->imageUrl() }}"
+                 alt="{{ $product->name }}"
+                 data-fallback="{{ asset('img/no-image.png') }}" onerror="this.onerror=null;this.src=this.dataset.fallback">
+        </div>
         <div class="card-body d-flex flex-column">
             <h3 class="h6">{{ $product->name }}</h3>
             <p class="text-muted small mb-1">{{ $product->brand->name }} &middot; {{ $product->category->name }}</p>
@@ -11,7 +13,7 @@
                 {{ $product->formattedPrice() }}
                 @if ($product->livePromotion)
                     <small class="sl-promo-was">{{ number_format((float) $product->price, 0) }} MMK</small>
-                    <span class="badge text-bg-danger">-{{ $product->livePromotion->discount_percent }}%</span>
+                    <span class="badge text-bg-danger" title="Promotion">-{{ $product->livePromotion->discount_percent }}%</span>
                 @endif
             </p>
             @if(isset($showStock) && $showStock)

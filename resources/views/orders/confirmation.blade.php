@@ -14,7 +14,7 @@
     <ul class="list-group list-group-flush mb-2">
         @foreach ($order->items as $item)
             <li class="list-group-item d-flex justify-content-between px-0">
-                <span>{{ $item->variant->product->name }} (EU {{ $item->variant->size->label }}) &times; {{ $item->quantity }}
+                <span>{{ $item->variant->product->name }} ({{ $item->variant->label() }}) &times; {{ $item->quantity }}
                     @if ($item->isPromotional())
                         <br><span class="badge text-bg-danger">-{{ $item->discount_percent }}%</span>
                         <small class="text-muted">{{ $item->promotion_title }} &middot; saved {{ number_format($item->savings(), 0) }} MMK</small>

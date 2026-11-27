@@ -26,7 +26,6 @@
                 <div class="sl-admin-gallery-thumb">
                     <img src="{{ $image->imageUrl() }}" alt="{{ $image->altText() }}" loading="lazy">
                     <span class="badge {{ $image->is_active ? 'text-bg-success' : 'text-bg-secondary' }}">{{ $image->is_active ? 'Shown' : 'Hidden' }}</span>
-                    <span class="badge text-bg-dark sl-admin-gallery-order">#{{ $image->sort_order }}</span>
                 </div>
                 <div class="p-3">
                     <form method="POST" action="{{ route('admin.gallery.update', $image) }}" enctype="multipart/form-data">
@@ -41,24 +40,9 @@
                             <input type="text" id="subtitle-{{ $image->id }}" name="subtitle" maxlength="120" class="form-control form-control-sm" value="{{ $image->subtitle }}" placeholder="Brand and model">
                         </div>
                         <div class="mb-2">
-                            <label class="form-label small" for="product-{{ $image->id }}">"Shop this look" product (optional)</label>
-                            <select id="product-{{ $image->id }}" name="product_id" class="form-select form-select-sm">
-                                <option value="">None</option>
-                                @foreach ($products as $product)
-                                    <option value="{{ $product->id }}" @selected($image->product_id === $product->id)>{{ $product->name }} ({{ $product->brand->name }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col-5">
-                                <label class="form-label small" for="order-{{ $image->id }}">Order</label>
-                                <input type="number" id="order-{{ $image->id }}" name="sort_order" min="0" max="9999" class="form-control form-control-sm" value="{{ $image->sort_order }}" required>
-                            </div>
-                            <div class="col-7 d-flex align-items-end">
-                                <div class="form-check form-switch mb-1">
-                                    <input type="checkbox" name="is_active" value="1" class="form-check-input" id="active-{{ $image->id }}" @checked($image->is_active)>
-                                    <label class="form-check-label small" for="active-{{ $image->id }}">Show on home page</label>
-                                </div>
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="is_active" value="1" class="form-check-input" id="active-{{ $image->id }}" @checked($image->is_active)>
+                                <label class="form-check-label small" for="active-{{ $image->id }}">Show on home page</label>
                             </div>
                         </div>
                         <div class="mb-3">

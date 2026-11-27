@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GalleryImage;
-use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,10 +16,9 @@ class GalleryController extends Controller
 
     public function index(): View
     {
-        $images = GalleryImage::with('product')->orderBy('sort_order')->orderBy('id')->get();
-        $products = Product::with('brand')->where('status', 'active')->orderBy('name')->get();
+        $images = GalleryImage::orderBy('sort_order')->orderBy('id')->get();
 
-        return view('admin.gallery', compact('images', 'products'));
+        return view('admin.gallery', compact('images'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -50,8 +48,6 @@ class GalleryController extends Controller
         $validated = $request->validate([
             'title' => ['nullable', 'string', 'max:80'],
             'subtitle' => ['nullable', 'string', 'max:120'],
-            'product_id' => ['nullable', 'exists:products,id'],
-            'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
             'image' => ['nullable', ...self::IMAGE_RULES],
         ]);
 
